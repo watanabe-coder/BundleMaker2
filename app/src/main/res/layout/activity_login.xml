@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <EditText
+        android:id="@+id/userIdEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="ユーザーID"
+        android:inputType="text"
+        android:minHeight="48dp" />
+
+    <EditText
+        android:id="@+id/passwordEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="パスワード"
+        android:inputType="textPassword"
+        android:minHeight="48dp" />
+
+    <Button
+        android:id="@+id/loginButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ログイン" />
+
+    <TextView
+        android:id="@+id/errorText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FF0000"
+        android:visibility="gone"
+        android:text="" />
+
+</LinearLayout>
+

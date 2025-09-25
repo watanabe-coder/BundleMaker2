@@ -19,8 +19,10 @@
 #### 1. ログイン画面
    - 目的：ユーザー認証
    - 機能
-      ユーザーID／パスワード入力
-      ログインボタン
+      - ユーザーID入力欄（EditText, id: userIdEdit）
+      - パスワード入力欄（EditText, id: passwordEdit）
+      - ログインボタン（Button, id: loginButton）
+      - エラーメッセージ表示（TextView, id: errorText）
    - 挙動
       認証成功 → メイン画面に遷移
       認証失敗 → エラーメッセージ表示
