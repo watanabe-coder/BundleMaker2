@@ -32,7 +32,6 @@
         android:hint="@string/input_hint"
         android:imeOptions="actionDone"
         android:maxLines="1"
-        android:background="@android:drawable/editbox_background"
         android:padding="12dp"
         android:autofillHints="username"/>
 

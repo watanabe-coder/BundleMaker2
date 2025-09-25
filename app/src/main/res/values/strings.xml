@@ -10,12 +10,17 @@
     <string name="confirm">確認</string>
     <string name="edit">編集</string>
     <string name="delete">削除</string>
+    <string name="sync">同期</string>
+    <string name="settings">設定</string>
+    <string name="logout">ログアウト</string>
 
     <!-- Confirmation Screen Strings -->
     <string name="confirm_title">登録内容確認</string>
     <string name="confirm_list_desc">登録内容一覧</string>
     <string name="confirm_button">確定</string>
     <string name="cancel_button">キャンセル</string>
+    <string name="label_manufacturer_id">製造番号:</string>
+    <string name="item_count">%1$d件</string>
 
     <!-- Scan Input Dialog -->
     <string name="scan_title">製造番号をスキャン</string>
