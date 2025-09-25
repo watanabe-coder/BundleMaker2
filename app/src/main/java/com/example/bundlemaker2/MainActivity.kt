@@ -9,11 +9,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.bundlemaker2.ui.ScanInputDialog
 import com.example.bundlemaker2.util.Constants
 
 class MainActivity : AppCompatActivity() {
     private var currentMfgId: String = ""
     private val serialIds = mutableListOf<String>()
+    private var isBundleMode = false
 
     private val confirmActivityResult = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -50,19 +52,35 @@ class MainActivity : AppCompatActivity() {
         
         // Set up button click listeners
         findViewById<View>(R.id.bundleButton).setOnClickListener {
-            // TODO: Implement bundle button click action
-            showToast("Bundle button clicked")
-            // For testing, add sample data
-            currentMfgId = "MFG12345"
-            serialIds.addAll(listOf("SER001", "SER002", "SER003"))
+            isBundleMode = true
+            showScanInputDialog(
+                title = getString(R.string.bundle_manufacturing_number),
+                hint = getString(R.string.input_manufacturer_id_hint)
+            ) { input ->
+                currentMfgId = input
+                showToast("製造番号が設定されました: $input")
+                // シリアル番号入力に進む
+                showScanInputDialog(
+                    title = getString(R.string.input_serial_number),
+                    hint = getString(R.string.input_serial_number_hint)
+                ) { serial ->
+                    serialIds.add(serial)
+                    showToast("シリアル番号が追加されました: $serial")
+                }
+            }
         }
         
         findViewById<View>(R.id.unitButton).setOnClickListener {
-            // TODO: Implement unit button click action
-            showToast("Unit button clicked")
-            // For testing, add sample data
-            currentMfgId = "MFG54321"
-            serialIds.add("SER999")
+            isBundleMode = false
+            showScanInputDialog(
+                title = getString(R.string.unit_serial_number),
+                hint = getString(R.string.input_serial_number_hint)
+            ) { input ->
+                currentMfgId = "" // ユニットモードでは製造番号は不要
+                serialIds.clear()
+                serialIds.add(input)
+                showToast("ユニットシリアル番号が設定されました: $input")
+            }
         }
         
         findViewById<View>(R.id.confirmButton).setOnClickListener {
@@ -95,5 +113,16 @@ class MainActivity : AppCompatActivity() {
             putStringArrayListExtra(Constants.EXTRA_SERIAL_IDS, ArrayList(serialIds))
         }
         confirmActivityResult.launch(intent)
+    }
+
+    private fun showScanInputDialog(
+        title: String,
+        hint: String,
+        onInput: (String) -> Unit
+    ) {
+        val dialog = ScanInputDialog(title, hint) { input ->
+            onInput(input)
+        }
+        dialog.show(supportFragmentManager, ScanInputDialog.TAG)
     }
 }

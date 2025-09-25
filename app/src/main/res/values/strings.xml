@@ -13,6 +13,11 @@
     <string name="sync">同期</string>
     <string name="settings">設定</string>
     <string name="logout">ログアウト</string>
+    
+    <!-- Scan/Input Dialog -->
+    <string name="input_manufacturer_id_hint">製造番号を入力</string>
+    <string name="input_serial_number">シリアル番号入力</string>
+    <string name="input_serial_number_hint">シリアル番号を入力</string>
 
     <!-- Confirmation Screen Strings -->
     <string name="confirm_title">登録内容確認</string>
