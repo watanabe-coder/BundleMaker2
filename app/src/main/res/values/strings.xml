@@ -8,4 +8,12 @@
     <string name="bundle_manufacturing_number">Bundle 製造番号</string>
     <string name="unit_serial_number">Unit シリアル番号</string>
     <string name="confirm">確認</string>
+    <string name="edit">編集</string>
+    <string name="delete">削除</string>
+
+    <!-- Confirmation Screen Strings -->
+    <string name="confirm_title">登録内容確認</string>
+    <string name="confirm_list_desc">登録内容一覧</string>
+    <string name="confirm_button">確定</string>
+    <string name="cancel_button">キャンセル</string>
 </resources>
