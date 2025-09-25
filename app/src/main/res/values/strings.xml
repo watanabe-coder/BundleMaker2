@@ -16,4 +16,12 @@
     <string name="confirm_list_desc">登録内容一覧</string>
     <string name="confirm_button">確定</string>
     <string name="cancel_button">キャンセル</string>
+
+    <!-- Scan Input Dialog -->
+    <string name="scan_title">製造番号をスキャン</string>
+    <string name="scan_subtitle">スキャナーで読み取るか、手入力してください</string>
+    <string name="input_hint">番号を入力</string>
+    <string name="scan">スキャン</string>
+    <string name="ok">OK</string>
+    <string name="cancel">キャンセル</string>
 </resources>
