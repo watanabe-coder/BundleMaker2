@@ -8,6 +8,7 @@ import java.time.Instant
 enum class MappingStatus {
     DRAFT,      // 下書き
     READY,      // 送信準備完了
+    SUCCESS,    // 送信成功
     SENT,       // 送信済み
     ERROR       // エラー
 }
