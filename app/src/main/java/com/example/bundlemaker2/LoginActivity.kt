@@ -6,16 +6,32 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import kotlin.collections.forEach
 
 class LoginActivity : AppCompatActivity() {
-    private lateinit var userCodes: Set<String>
+    private lateinit var userMap: Map<String, String>
+
+    private fun loadUserMapFromAssets(): Map<String, String> {
+        val userMap = mutableMapOf<String, String>()
+        assets.open("employees.csv").bufferedReader().useLines { lines ->
+            lines.forEach { line ->
+                val parts = line.split(",")
+                if (parts.size >= 2) {
+                    val code = parts[0].trim()
+                    val name = parts[1].trim()
+                    userMap[code] = name
+                }
+            }
+        }
+        return userMap
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        // assets/employee.csv から user_code を読み込む
-        userCodes = loadUserCodesFromAssets()
+        // assets/employees.csv からユーザー情報を読み込む
+        userMap = loadUserMapFromAssets()
 
         val userIdEdit = findViewById<EditText>(R.id.userIdEdit)
         val loginButton = findViewById<Button>(R.id.loginButton)
@@ -26,10 +42,13 @@ class LoginActivity : AppCompatActivity() {
             if (userId.isBlank()) {
                 errorText.text = "ユーザーIDを入力してください"
                 errorText.visibility = TextView.VISIBLE
-            } else if (userCodes.contains(userId)) {
+            } else if (userMap.containsKey(userId)) {
                 errorText.visibility = TextView.GONE
-                val intent = Intent(this, MainActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                val userName = userMap[userId] ?: ""
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    putExtra("EXTRA_USER_NAME", userName)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
                 startActivity(intent)
                 finish()
             } else {
@@ -37,18 +56,5 @@ class LoginActivity : AppCompatActivity() {
                 errorText.visibility = TextView.VISIBLE
             }
         }
-    }
-
-    private fun loadUserCodesFromAssets(): Set<String> {
-        val codes = mutableSetOf<String>()
-        assets.open("employees.csv").bufferedReader().useLines { lines ->
-            lines.forEach { line ->
-                val parts = line.split(",")
-                if (parts.isNotEmpty()) {
-                    codes.add(parts[0].trim()) // 1列目が user_code の場合
-                }
-            }
-        }
-        return codes
     }
 }

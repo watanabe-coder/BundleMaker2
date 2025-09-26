@@ -3,6 +3,7 @@ package com.example.bundlemaker2
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,6 +37,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+
+        val userName = intent.getStringExtra("EXTRA_USER_NAME") ?: ""
+        val workerTextView = findViewById<TextView>(R.id.workerInfoText)
+        workerTextView.text = "作業者：$userName"
         
         // Set up edge-to-edge display
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { _, insets ->
