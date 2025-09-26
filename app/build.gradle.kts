@@ -65,4 +65,13 @@ dependencies {
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
     androidTestImplementation("com.google.dagger:hilt-android-testing:2.50")
     kaptTest("com.google.dagger:hilt-android-compiler:2.50")
+
+    // ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.4")
+
+    // Hilt for ViewModel
+    implementation("androidx.hilt:hilt-lifecycle-viewmodel:1.3.0")
+    kapt("androidx.hilt:hilt-compiler:1.3.0")
 }
