@@ -106,4 +106,24 @@ class MfgSerialRepositoryImpl @Inject constructor(
             -1
         }
     }
+    override suspend fun confirmMappings(mfgId: String): Result<Unit> = runCatching {
+        val currentTime = Instant.now()
+        val updatedCount = mfgSerialMappingDao.updateStatuses(
+            mfgId = mfgId,
+            currentStatuses = listOf(MappingStatus.SUCCESS, MappingStatus.ERROR),
+            newStatus = MappingStatus.SENT,
+            updatedAt = currentTime
+        )
+
+        if (updatedCount == 0) {
+            throw IllegalStateException("更新対象のマッピングが見つかりませんでした")
+        }
+    }
+
+    override suspend fun getMappingsForConfirmation(mfgId: String): List<MfgSerialMapping> {
+        return mfgSerialMappingDao.getByMfgIdAndStatuses(
+            mfgId = mfgId,
+            statuses = listOf(MappingStatus.SUCCESS, MappingStatus.ERROR)
+        )
+    }
 }

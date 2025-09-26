@@ -38,4 +38,8 @@ interface MfgSerialRepository {
     
     // 全マッピング数を取得
     suspend fun count(): Int
+
+    suspend fun confirmMappings(mfgId: String): Result<Unit>
+
+    suspend fun getMappingsForConfirmation(mfgId: String): List<MfgSerialMapping>
 }

@@ -37,4 +37,12 @@ interface MfgSerialMappingDao {
     
     @Query("SELECT COUNT(*) FROM mfg_serial_mappings")
     suspend fun count(): Int
+
+    // 製造番号とステータスリストでマッピングを取得
+    @Query("SELECT * FROM mfg_serial_mappings WHERE mfgId = :mfgId AND status IN (:statuses) ORDER BY scannedAt DESC")
+    suspend fun getByMfgIdAndStatuses(mfgId: String, statuses: List<MappingStatus>): List<MfgSerialMapping>
+
+    // ステータスを一括更新
+    @Query(" UPDATE mfg_serial_mappings SET status = :newStatus, updatedAt = :updatedAt WHERE mfgId = :mfgId AND status IN (:currentStatuses)")
+    suspend fun updateStatuses(mfgId: String, currentStatuses: List<MappingStatus>, newStatus: MappingStatus, updatedAt: Instant = Instant.now()): Int
 }
