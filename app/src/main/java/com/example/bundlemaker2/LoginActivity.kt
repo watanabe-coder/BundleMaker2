@@ -8,34 +8,47 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 class LoginActivity : AppCompatActivity() {
+    private lateinit var userCodes: Set<String>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
+        // assets/employee.csv から user_code を読み込む
+        userCodes = loadUserCodesFromAssets()
+
         val userIdEdit = findViewById<EditText>(R.id.userIdEdit)
-        val passwordEdit = findViewById<EditText>(R.id.passwordEdit)
         val loginButton = findViewById<Button>(R.id.loginButton)
         val errorText = findViewById<TextView>(R.id.errorText)
 
         loginButton.setOnClickListener {
-            val userId = userIdEdit.text.toString()
-            val password = passwordEdit.text.toString()
-            if (userId.isBlank() || password.isBlank()) {
-                errorText.text = "ユーザーIDとパスワードを入力してください"
+            val userId = userIdEdit.text.toString().trim()
+            if (userId.isBlank()) {
+                errorText.text = "ユーザーIDを入力してください"
                 errorText.visibility = TextView.VISIBLE
-                return@setOnClickListener
-            }
-            // 仮認証処理（本番はAPI連携）
-            if (userId == "admin" && password == "password") {
+            } else if (userCodes.contains(userId)) {
                 errorText.visibility = TextView.GONE
-                // メイン画面へ遷移
                 val intent = Intent(this, MainActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 startActivity(intent)
                 finish()
             } else {
-                errorText.text = "認証に失敗しました"
+                errorText.text = "ユーザーIDが見つかりません"
                 errorText.visibility = TextView.VISIBLE
             }
         }
+    }
+
+    private fun loadUserCodesFromAssets(): Set<String> {
+        val codes = mutableSetOf<String>()
+        assets.open("employees.csv").bufferedReader().useLines { lines ->
+            lines.forEach { line ->
+                val parts = line.split(",")
+                if (parts.isNotEmpty()) {
+                    codes.add(parts[0].trim()) // 1列目が user_code の場合
+                }
+            }
+        }
+        return codes
     }
 }
