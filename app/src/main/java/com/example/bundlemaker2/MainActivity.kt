@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import android.view.MenuItem
+import androidx.appcompat.widget.PopupMenu
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -97,9 +99,8 @@ class MainActivity : AppCompatActivity() {
         }
         
         // Set up menu and refresh button click listeners
-        findViewById<View>(R.id.menuButton).setOnClickListener {
-            // TODO: Implement menu button click action
-            showToast("Menu button clicked")
+        findViewById<View>(R.id.menuButton).setOnClickListener { view ->
+                showPopupMenu(view)
         }
         
         findViewById<View>(R.id.refreshButton).setOnClickListener {
@@ -129,5 +130,36 @@ class MainActivity : AppCompatActivity() {
             onInput(input)
         }
         dialog.show(supportFragmentManager, ScanInputDialog.TAG)
+    }
+
+    private fun showPopupMenu(anchorView: View) {
+        val popupMenu = PopupMenu(this, anchorView)
+        popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
+
+        // メニューアイテムが選択されたときの処理
+        popupMenu.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_settings -> {
+                    // 設定画面への遷移処理（未実装）
+                    showToast("設定画面を表示します")
+                    true
+                }
+                R.id.action_logout -> {
+                    // ログアウト処理
+                    showToast("ログアウトします")
+                    // ログイン画面に戻る
+                    val intent = Intent(this, LoginActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                    startActivity(intent)
+                    finish()
+                    true
+                }
+                else -> false
+            }
+        }
+
+        // メニューを表示
+        popupMenu.show()
     }
 }
