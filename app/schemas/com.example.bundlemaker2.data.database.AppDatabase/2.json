@@ -1,68 +1,9 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 1,
-    "identityHash": "7c4269350aaf1d4493d3d29ad634a0e2",
+    "version": 2,
+    "identityHash": "9cb84b7e0ae6ddbe4a0a4f9a61b1aa91",
     "entities": [
-      {
-        "tableName": "mfg_serial_mappings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `mfgId` TEXT NOT NULL, `serialId` TEXT NOT NULL, `scannedAt` INTEGER NOT NULL, `status` TEXT NOT NULL, `errorCode` TEXT)",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "mfgId",
-            "columnName": "mfgId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "serialId",
-            "columnName": "serialId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "scannedAt",
-            "columnName": "scannedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "status",
-            "columnName": "status",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "errorCode",
-            "columnName": "errorCode",
-            "affinity": "TEXT"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": true,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_mfg_serial_mappings_mfgId_serialId",
-            "unique": true,
-            "columnNames": [
-              "mfgId",
-              "serialId"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_mfg_serial_mappings_mfgId_serialId` ON `${TABLE_NAME}` (`mfgId`, `serialId`)"
-          }
-        ]
-      },
       {
         "tableName": "work_sessions",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `mfgId` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `endedAt` INTEGER, `note` TEXT)",
@@ -147,7 +88,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7c4269350aaf1d4493d3d29ad634a0e2')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9cb84b7e0ae6ddbe4a0a4f9a61b1aa91')"
     ]
   }
 }

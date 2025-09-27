@@ -4,6 +4,7 @@ import androidx.room.*
 import com.example.bundlemaker2.data.entity.Outbox
 import com.example.bundlemaker2.data.entity.OutboxState
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 @Dao
 interface OutboxDao {
@@ -24,5 +25,11 @@ interface OutboxDao {
 
     @Query("SELECT COUNT(*) FROM outbox WHERE state = :state")
     suspend fun countByState(state: OutboxState): Int
+
+    @Query("UPDATE outbox SET state = :state, lastTriedAt = :lastTriedAt WHERE outboxId = :outboxId")
+    suspend fun updateState(outboxId: Long, state: OutboxState, lastTriedAt: Instant?)
+
+    @Query("SELECT * FROM outbox WHERE outboxId = :outboxId LIMIT 1")
+    suspend fun getById(outboxId: Long): Outbox?
 }
 

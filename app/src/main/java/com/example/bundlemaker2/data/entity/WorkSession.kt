@@ -5,28 +5,12 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.time.Instant
 
-@Entity(
-    tableName = "work_sessions",
-    indices = [
-        Index(value = ["mfgId"], unique = false)
-    ]
-)
+@Entity(tableName = "work_sessions")
 data class WorkSession(
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    
-    // 製造番号
+    val id: Long = 0L,
     val mfgId: String,
-    
-    // セッション開始時刻
-    val startedAt: Instant = Instant.now(),
-    
-    // セッション終了時刻（nullの場合は進行中）
+    val startedAt: Instant,
     val endedAt: Instant? = null,
-    
-    // メモ
-    val note: String? = null,
-    
-    // 最終更新日時
-    val updatedAt: Instant = Instant.now()
+    val note: String? = null
 )

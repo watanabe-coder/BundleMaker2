@@ -2,7 +2,7 @@ package com.example.bundlemaker2.ui.confirm
 
 import androidx.lifecycle.viewModelScope
 import com.example.bundlemaker2.data.entity.MappingStatus
-import com.example.bundlemaker2.data.repository.MfgSerialRepository
+import com.example.bundlemaker2.data.repository.MfgSerialMappingRepository
 import com.example.bundlemaker2.data.repository.WorkSessionRepository
 import com.example.bundlemaker2.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +22,7 @@ data class ConfirmUiState(
 
 @HiltViewModel
 class ConfirmViewModel @Inject constructor(
-    private val mfgSerialRepository: MfgSerialRepository,
+    private val mfgSerialRepository: MfgSerialMappingRepository,
     private val workSessionRepository: WorkSessionRepository
 ) : BaseViewModel<ConfirmUiState>() {
 
@@ -37,8 +37,8 @@ class ConfirmViewModel @Inject constructor(
             // 製造番号でフィルタリングして集計
             val mfgId = _uiState.value.mfgId
             if (mfgId.isNotBlank()) {
-                mfgSerialRepository.getMappingsByMfgId(mfgId).collect { mappings ->
-                    val successCount = mappings.count { it.status == MappingStatus.SUCCESS }
+                mfgSerialRepository.getByMfgId(mfgId).collect { mappings ->  // 変更
+                    val successCount = mappings.count { it.status == MappingStatus.SENT }  // 変更
                     val errorCount = mappings.count { it.status == MappingStatus.ERROR }
 
                     _uiState.value = _uiState.value.copy(
@@ -67,12 +67,11 @@ class ConfirmViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                // ここで確認処理を実装
-                // 例: ステータスをSENTに更新
-                // セッションを終了
-                val latestSession = workSessionRepository.getLatestSessionByMfgId(mfgId)
+                // 最新のセッションを取得
+                val latestSession = workSessionRepository.getLatestByMfgId(mfgId)
                 latestSession?.let { session ->
-                    workSessionRepository.endSession(session.id)
+                    // セッションを終了（現在時刻をendTimeとして渡す）
+                    workSessionRepository.endSession(session.id, java.time.Instant.now())
                 }
 
                 _uiState.value = _uiState.value.copy(

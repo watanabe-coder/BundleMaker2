@@ -3,7 +3,9 @@ package com.example.bundlemaker2.ui.main
 
 import androidx.lifecycle.viewModelScope
 import com.example.bundlemaker2.data.entity.MappingStatus
-import com.example.bundlemaker2.data.repository.MfgSerialRepository
+import com.example.bundlemaker2.data.entity.MfgSerialMapping
+import com.example.bundlemaker2.data.entity.WorkSession
+import com.example.bundlemaker2.data.repository.MfgSerialMappingRepository
 import com.example.bundlemaker2.data.repository.WorkSessionRepository
 import com.example.bundlemaker2.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +27,7 @@ data class MainUiState(
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val mfgSerialRepository: MfgSerialRepository,
+    private val mfgSerialRepository: MfgSerialMappingRepository,
     private val workSessionRepository: WorkSessionRepository
 ) : BaseViewModel<MainUiState>() {
 
@@ -38,7 +40,7 @@ class MainViewModel @Inject constructor(
 
     private fun loadCounts() {
         viewModelScope.launch {
-            mfgSerialRepository.countByStatus(MappingStatus.SUCCESS).collect { successCount ->
+            mfgSerialRepository.countByStatus(MappingStatus.SENT).collect { successCount ->
                 _uiState.value = _uiState.value.copy(successCount = successCount)
             }
         }
@@ -72,7 +74,15 @@ class MainViewModel @Inject constructor(
 
             try {
                 // マッピングを追加
-                val result = mfgSerialRepository.addMapping(mfgId, serialId, Instant.now())
+                val mapping = MfgSerialMapping(
+                    mfgId = mfgId,
+                    serialId = serialId,
+                    scannedAt = Instant.now(),
+                    status = MappingStatus.DRAFT
+                )
+                val result = runCatching {
+                    mfgSerialRepository.insert(mapping)
+                }
 
                 result.onSuccess {
                     _uiState.value = _uiState.value.copy(
@@ -98,10 +108,12 @@ class MainViewModel @Inject constructor(
 
     private fun checkActiveSession() {
         viewModelScope.launch {
-            // アクティブなセッションがあるか確認
-            val activeSessions = workSessionRepository.getActiveSessions()
-            activeSessions.collectLatest { sessions ->
-                _uiState.value = _uiState.value.copy(isSessionActive = sessions.isNotEmpty())
+            val mfgId = _uiState.value.mfgId
+            if (mfgId.isNotBlank()) {
+                val latestSession = workSessionRepository.getLatestByMfgId(mfgId)
+                _uiState.value = _uiState.value.copy(
+                    isSessionActive = latestSession?.endedAt == null
+                )
             }
         }
     }
@@ -117,22 +129,21 @@ class MainViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                val result = workSessionRepository.startSession(mfgId)
-                result.onSuccess {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isSessionActive = true
-                    )
-                }.onFailure { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = exception.message ?: "セッションの開始に失敗しました"
-                    )
-                }
+                val workSession = WorkSession(
+                    mfgId = mfgId,
+                    startedAt = Instant.now(),
+                    endedAt = null
+                )
+                workSessionRepository.insert(workSession)
+
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isSessionActive = true
+                )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "予期せぬエラーが発生しました"
+                    error = e.message ?: "セッションの開始に失敗しました"
                 )
             }
         }
@@ -144,27 +155,25 @@ class MainViewModel @Inject constructor(
 
             try {
                 // 最新のセッションを取得して終了
-                val latestSession = workSessionRepository.getLatestSessionByMfgId(_uiState.value.mfgId)
-                latestSession?.let { session ->
-                    val result = workSessionRepository.endSession(session.id)
-                    result.onSuccess {
+                val mfgId = _uiState.value.mfgId
+                if (mfgId.isNotBlank()) {
+                    val latestSession = workSessionRepository.getLatestByMfgId(mfgId)
+                    latestSession?.let { session ->
+                        val updatedSession = session.copy(endedAt = Instant.now())
+                        workSessionRepository.update(updatedSession)
+
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             isSessionActive = false,
                             mfgId = "",
                             serialId = ""
                         )
-                    }.onFailure { exception ->
+                    } ?: run {
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            error = exception.message ?: "セッションの終了に失敗しました"
+                            error = "アクティブなセッションが見つかりません"
                         )
                     }
-                } ?: run {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "アクティブなセッションが見つかりません"
-                    )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
