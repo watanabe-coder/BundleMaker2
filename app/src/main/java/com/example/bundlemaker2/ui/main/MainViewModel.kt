@@ -2,14 +2,13 @@
 package com.example.bundlemaker2.ui.main
 
 import androidx.lifecycle.viewModelScope
-import com.example.bundlemaker2.data.entity.MappingStatus
-import com.example.bundlemaker2.data.entity.MfgSerialMapping
-import com.example.bundlemaker2.data.entity.WorkSession
+import com.example.bundlemaker2.data.local.entity.MappingStatus
+import com.example.bundlemaker2.data.local.entity.MfgSerialMapping
+import com.example.bundlemaker2.data.local.entity.WorkSession
 import com.example.bundlemaker2.data.repository.MfgSerialMappingRepository
 import com.example.bundlemaker2.data.repository.WorkSessionRepository
 import com.example.bundlemaker2.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.Instant
 import javax.inject.Inject

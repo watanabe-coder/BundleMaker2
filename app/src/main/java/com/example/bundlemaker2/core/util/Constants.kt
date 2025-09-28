@@ -1,4 +1,4 @@
-package com.example.bundlemaker2.util
+package com.example.bundlemaker2.core.util
 
 object Constants {
     // Request codes

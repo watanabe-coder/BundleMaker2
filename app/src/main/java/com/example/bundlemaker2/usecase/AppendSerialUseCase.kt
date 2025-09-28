@@ -1,7 +1,7 @@
 package com.example.bundlemaker2.usecase
 
-import com.example.bundlemaker2.data.entity.MfgSerialMapping
-import com.example.bundlemaker2.data.entity.MappingStatus
+import com.example.bundlemaker2.data.local.entity.MfgSerialMapping
+import com.example.bundlemaker2.data.local.entity.MappingStatus
 import com.example.bundlemaker2.data.repository.MfgSerialMappingRepository
 import javax.inject.Inject
 import java.time.Instant

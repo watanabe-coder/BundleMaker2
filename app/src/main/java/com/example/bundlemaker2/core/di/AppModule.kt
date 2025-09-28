@@ -1,12 +1,10 @@
-package com.example.bundlemaker2.di
+package com.example.bundlemaker2.core.di
 
 import android.content.Context
 import com.example.bundlemaker2.data.database.AppDatabase
-import com.example.bundlemaker2.data.dao.MfgSerialMappingDao
-import com.example.bundlemaker2.data.dao.WorkSessionDao
-import com.example.bundlemaker2.data.dao.OutboxDao
-import com.example.bundlemaker2.data.repository.MfgSerialMappingRepository
-import com.example.bundlemaker2.data.repository.MfgSerialMappingRepositoryImpl
+import com.example.bundlemaker2.data.local.dao.MfgSerialMappingDao
+import com.example.bundlemaker2.data.local.dao.WorkSessionDao
+import com.example.bundlemaker2.data.local.dao.OutboxDao
 import com.example.bundlemaker2.data.repository.WorkSessionRepository
 import com.example.bundlemaker2.data.repository.WorkSessionRepositoryImpl
 import com.example.bundlemaker2.data.repository.OutboxRepository
@@ -53,11 +51,5 @@ object AppModule {
     @Provides
     fun provideOutboxRepository(dao: OutboxDao): OutboxRepository {
         return OutboxRepositoryImpl(dao)
-    }
-
-    @Singleton
-    @Provides
-    fun provideMfgSerialRepository(dao: MfgSerialMappingDao): MfgSerialMappingRepository {
-        return MfgSerialMappingRepositoryImpl(dao)
     }
 }

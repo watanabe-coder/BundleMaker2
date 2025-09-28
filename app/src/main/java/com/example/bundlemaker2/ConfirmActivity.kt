@@ -9,10 +9,9 @@ import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.bundlemaker2.util.Constants
+import com.example.bundlemaker2.core.util.Constants
 import com.google.android.material.button.MaterialButton
 
 enum class Action { EDIT, DELETE }

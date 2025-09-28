@@ -1,6 +1,6 @@
 package com.example.bundlemaker2.data.repository
 
-import com.example.bundlemaker2.data.entity.MfgSerialMapping
+import com.example.bundlemaker2.data.local.entity.MfgSerialMapping
 
 interface MappingRepository {
     suspend fun confirmMappings(mfgId: String): Result<Unit>

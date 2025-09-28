@@ -3,7 +3,7 @@ package com.example.bundlemaker2.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bundlemaker2.usecase.AppendMappingUseCase
-import com.example.bundlemaker2.data.entity.MfgSerialMapping
+import com.example.bundlemaker2.data.local.entity.MfgSerialMapping
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

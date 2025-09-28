@@ -1,7 +1,7 @@
 package com.example.bundlemaker2.data.repository
 
-import com.example.bundlemaker2.data.entity.Outbox
-import com.example.bundlemaker2.data.entity.OutboxState
+import com.example.bundlemaker2.data.local.entity.Outbox
+import com.example.bundlemaker2.data.local.entity.OutboxState
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 

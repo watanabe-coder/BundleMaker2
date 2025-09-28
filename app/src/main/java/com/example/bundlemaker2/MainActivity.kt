@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import android.view.MenuItem
 import androidx.appcompat.widget.PopupMenu
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.bundlemaker2.ui.ScanInputDialog
-import com.example.bundlemaker2.util.Constants
+import com.example.bundlemaker2.core.util.Constants
 
 class MainActivity : AppCompatActivity() {
     private var currentMfgId: String = ""

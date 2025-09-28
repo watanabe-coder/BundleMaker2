@@ -1,6 +1,7 @@
-package com.example.bundlemaker2.util
+package com.example.bundlemaker2.core.util
 
 import androidx.room.TypeConverter
+import com.example.bundlemaker2.data.local.entity.MappingStatus
 import java.time.Instant
 
 /**
@@ -29,12 +30,12 @@ class Converters {
     }
 
     @TypeConverter
-    fun fromMappingStatus(value: String?): com.example.bundlemaker2.data.entity.MappingStatus? {
-        return value?.let { com.example.bundlemaker2.data.entity.MappingStatus.valueOf(it) }
+    fun fromMappingStatus(value: String?): MappingStatus? {
+        return value?.let { MappingStatus.valueOf(it) }
     }
 
     @TypeConverter
-    fun toMappingStatus(status: com.example.bundlemaker2.data.entity.MappingStatus?): String? {
+    fun toMappingStatus(status: MappingStatus?): String? {
         return status?.name
     }
 }

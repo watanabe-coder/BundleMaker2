@@ -1,6 +1,6 @@
 package com.example.bundlemaker2.usecase
 
-import com.example.bundlemaker2.data.entity.MfgSerialMapping
+import com.example.bundlemaker2.data.local.entity.MfgSerialMapping
 import com.example.bundlemaker2.data.repository.MappingRepository
 import javax.inject.Inject
 

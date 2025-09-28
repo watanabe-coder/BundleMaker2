@@ -1,7 +1,7 @@
 package com.example.bundlemaker2.data.repository
 
-import com.example.bundlemaker2.data.entity.MfgSerialMapping
-import com.example.bundlemaker2.data.entity.MappingStatus
+import com.example.bundlemaker2.data.local.entity.MfgSerialMapping
+import com.example.bundlemaker2.data.local.entity.MappingStatus
 import kotlinx.coroutines.flow.Flow
 
 interface MfgSerialMappingRepository {
@@ -13,4 +13,6 @@ interface MfgSerialMappingRepository {
     fun countByStatus(status: MappingStatus): Flow<Int>
     suspend fun updateStatuses(ids: List<Long>, status: MappingStatus): Result<Unit>
     suspend fun getById(id: Long): MfgSerialMapping?
+    suspend fun syncMappings(token: String, mfgId: String): Result<Unit>
+    suspend fun getUnsyncedMappings(): List<MfgSerialMapping>
 }

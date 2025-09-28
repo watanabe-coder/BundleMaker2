@@ -1,6 +1,6 @@
 package com.example.bundlemaker2.data.repository
 
-import com.example.bundlemaker2.data.entity.WorkSession
+import com.example.bundlemaker2.data.local.entity.WorkSession
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 

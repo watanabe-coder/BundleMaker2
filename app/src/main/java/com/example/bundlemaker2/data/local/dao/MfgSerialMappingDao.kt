@@ -1,8 +1,8 @@
-package com.example.bundlemaker2.data.dao
+package com.example.bundlemaker2.data.local.dao
 
 import androidx.room.*
-import com.example.bundlemaker2.data.entity.MfgSerialMapping
-import com.example.bundlemaker2.data.entity.MappingStatus
+import com.example.bundlemaker2.data.local.entity.MfgSerialMapping
+import com.example.bundlemaker2.data.local.entity.MappingStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -30,4 +30,7 @@ interface MfgSerialMappingDao {
 
     @Query("SELECT * FROM mfg_serial_mappings WHERE id = :id LIMIT 1")
     suspend fun getById(id: Long): MfgSerialMapping?
+
+    @Query("SELECT * FROM mfg_serial_mappings WHERE status = :status")
+    suspend fun getByStatus(status: MappingStatus): List<MfgSerialMapping>
 }
