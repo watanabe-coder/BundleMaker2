@@ -91,7 +91,7 @@ graph TD
 
 ---
 
-6. 通信仕様
+## 6. 通信仕様
 
 - 方式：HTTPS + Bearerトークン (JWT)
 - API：
@@ -104,7 +104,32 @@ graph TD
 
 ---
 
-7. アーキテクチャ
+## 6.1 API処理の実装手順
+
+1. **Retrofitインターフェース定義**
+   - `@POST("/api/v1/mappings/bulk")` でAPIエンドポイントを指定
+   - `Authorization`ヘッダーにBearerトークンを付与
+
+2. **データクラス作成**
+   - リクエスト/レスポンス用のKotlinデータクラスを定義
+
+3. **Repository層でAPI呼び出し**
+   - suspend関数でAPI呼び出し
+   - 成功/失敗をResult型で返却
+
+4. **UseCase層でビジネスロジック管理**
+   - Repositoryを呼び出し、結果をViewModelへ返す
+
+5. **ViewModelでUI状態管理・エラーハンドリング**
+   - API呼び出し結果に応じてUI更新・再試行処理
+
+6. **再試行・エラー管理**
+   - 失敗時はOutboxテーブルに再送キュー追加
+   - 再送は指数バックオフで自動/手動対応
+
+---
+
+## 7. アーキテクチャ
 
 - 構成：Clean Architecture
    - Presentation：Activity/Fragment + ViewModel
@@ -115,7 +140,7 @@ graph TD
 
 ---
 
-8. 運用・拡張
+## 8. 運用・拡張
 
 - ログ：操作ログ（スキャン、削除、送信）、送信ログ（requestId, 件数, 結果）
 - 権限：

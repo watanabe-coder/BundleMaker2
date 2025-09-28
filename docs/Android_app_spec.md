@@ -176,6 +176,108 @@ Entityの実装は`domain/entity/`ディレクトリを参照してください�
     ```
 - **タイムアウト/リトライ**：書込APIは30s目安。クライアントでリトライ（上記再試行ポリシー）。
 
+---
+
+## 8.1 API処理の実装例
+
+### 1. Retrofitインターフェース定義
+
+```kotlin
+interface MfgSerialApi {
+    @POST("/api/v1/mappings/bulk")
+    suspend fun postMappingsBulk(
+        @Header("Authorization") token: String,
+        @Body request: MappingsBulkRequest
+    ): Response<MappingsBulkResponse>
+}
+```
+
+### 2. データクラス例
+
+```kotlin
+data class MappingsBulkRequest(
+    val requestId: String,
+    val deviceId: String,
+    val mfgId: String,
+    val items: List<SerialItem>
+)
+
+data class SerialItem(
+    val serialId: String,
+    val scannedAt: String
+)
+
+data class MappingsBulkResponse(
+    val ok: Boolean,
+    val mfgId: String,
+    val accepted: Int,
+    val rejected: List<RejectedItem>
+)
+
+data class RejectedItem(
+    val serialId: String,
+    val code: String,
+    val message: String
+)
+```
+
+### 3. Repository実装例
+
+```kotlin
+class MfgSerialRepository @Inject constructor(
+    private val api: MfgSerialApi
+) {
+    suspend fun sendMappings(
+        token: String,
+        request: MappingsBulkRequest
+    ): Result<MappingsBulkResponse> {
+        return try {
+            val response = api.postMappingsBulk(token, request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("API error: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}
+```
+
+### 4. UseCase例
+
+```kotlin
+class SendMappingsUseCase @Inject constructor(
+    private val repository: MfgSerialRepository
+) {
+    suspend operator fun invoke(token: String, request: MappingsBulkRequest): Result<MappingsBulkResponse> {
+        return repository.sendMappings(token, request)
+    }
+}
+```
+
+### 5. ViewModelからの呼び出し例
+
+```kotlin
+viewModelScope.launch {
+    val result = sendMappingsUseCase(token, request)
+    result.onSuccess { response ->
+        // 成功時処理
+    }.onFailure { error ->
+        // エラー時処理
+    }
+}
+```
+
+### 6. エラーハンドリング・再試行
+
+- API失敗時は、エラー内容を記録し、再送キュー（Outbox）に追加
+- 送信成功分はステータスSENT、失敗分はERRORとして管理
+- 再試行は指数バックオフで自動/手動対応
+
+---
+
 ## 9. 例外・エラーコード（端末内の扱い）
 - **ネットワーク**：`NET_UNREACHABLE`, `TLS_ERROR`
 - **認証**：`AUTH_INVALID`, `AUTH_EXPIRED`
@@ -219,3 +321,24 @@ Entityの実装は`domain/entity/`ディレクトリを参照してください�
 
 ## 17. 将来拡張
 - 送信ジョブのスケジューラ（WorkManager）強化
+
+## API実装の順序（推奨）
+
+1. **データクラスの定義**
+   - リクエスト/レスポンス用のKotlinデータクラスを作成
+
+2. **Retrofitインターフェースの定義**
+   - APIエンドポイント・メソッド・ヘッダーを定義
+
+3. **Repository層の実装**
+   - suspend関数でAPI呼び出し・Result型で返却
+
+4. **UseCase層の実装**
+   - Repositoryを呼び出し、ビジネスロジックを整理
+
+5. **ViewModelからの呼び出し**
+   - UseCaseを利用し、UI状態管理・エラーハンドリング
+
+6. **エラー・再試行処理の実装**
+   - 失敗時はOutboxテーブルに再送キュー追加
+   - 再送は指数バックオフで自動/手動対応
