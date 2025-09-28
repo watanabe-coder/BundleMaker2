@@ -1,8 +1,9 @@
 package com.example.bundlemaker2.data.repository
 
 import com.example.bundlemaker2.data.remote.api.MfgSerialApiService
-import com.example.bundlemaker2.data.model.api.MappingsBulkRequest
-import com.example.bundlemaker2.data.model.api.MappingsBulkResponse
+import com.example.bundlemaker2.data.remote.model.MappingsBulkRequest
+import com.example.bundlemaker2.data.remote.model.MappingsBulkResponse
+import com.example.bundlemaker2.domain.repository.MfgSerialRemoteRepository
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject

@@ -5,28 +5,24 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.example.bundlemaker2.data.local.dao.WorkSessionDao
-import com.example.bundlemaker2.data.local.dao.OutboxDao
-import com.example.bundlemaker2.data.local.dao.MfgSerialMappingDao
-import com.example.bundlemaker2.data.local.entity.MfgSerialMapping
-import com.example.bundlemaker2.data.local.entity.WorkSession
-import com.example.bundlemaker2.data.local.entity.Outbox
 import com.example.bundlemaker2.core.util.Converters
+import com.example.bundlemaker2.data.local.dao.MfgSerialMappingDao
+import com.example.bundlemaker2.data.local.dao.WorkSessionDao
+import com.example.bundlemaker2.data.local.entity.MfgSerialMappingEntity
+import com.example.bundlemaker2.data.local.entity.WorkSessionEntity
 
 @Database(
     entities = [
-        WorkSession::class,
-        Outbox::class,
-        MfgSerialMapping::class  // 追加
+        MfgSerialMappingEntity::class,
+        WorkSessionEntity::class
     ],
-    version = 3,  // バージョンを1つ上げる
-    exportSchema = true
+    version = 1,
+    exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
+    abstract fun mfgSerialMappingDao(): MfgSerialMappingDao
     abstract fun workSessionDao(): WorkSessionDao
-    abstract fun outboxDao(): OutboxDao
-    abstract fun mfgSerialMappingDao(): MfgSerialMappingDao  // 追加
 
     companion object {
         @Volatile
@@ -38,7 +34,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "bundle_maker_db"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration() // 開発中は簡易的に追加
+                    .build()
                 INSTANCE = instance
                 instance
             }

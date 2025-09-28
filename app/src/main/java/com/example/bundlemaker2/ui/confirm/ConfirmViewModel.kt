@@ -1,9 +1,9 @@
 package com.example.bundlemaker2.ui.confirm
 
 import androidx.lifecycle.viewModelScope
-import com.example.bundlemaker2.data.local.entity.MappingStatus
-import com.example.bundlemaker2.data.repository.MfgSerialMappingRepository
-import com.example.bundlemaker2.data.repository.WorkSessionRepository
+import com.example.bundlemaker2.domain.model.MappingStatus
+import com.example.bundlemaker2.domain.repository.MfgSerialMappingRepository
+import com.example.bundlemaker2.domain.repository.WorkSessionRepository
 import com.example.bundlemaker2.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch

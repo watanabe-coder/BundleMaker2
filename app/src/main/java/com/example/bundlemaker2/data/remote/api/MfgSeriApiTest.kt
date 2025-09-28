@@ -1,8 +1,8 @@
 package com.example.bundlemaker2.data.remote.api
 
-import com.example.bundlemaker2.data.model.api.MappingsBulkRequest
-import com.example.bundlemaker2.data.model.api.MappingsBulkResponse
-import com.example.bundlemaker2.data.model.api.RejectedItem
+import com.example.bundlemaker2.data.remote.model.MappingsBulkRequest
+import com.example.bundlemaker2.data.remote.model.MappingsBulkResponse
+import com.example.bundlemaker2.data.remote.model.RejectedItem
 import com.google.gson.Gson
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse

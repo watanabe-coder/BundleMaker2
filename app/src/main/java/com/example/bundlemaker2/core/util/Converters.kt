@@ -1,7 +1,7 @@
 package com.example.bundlemaker2.core.util
 
 import androidx.room.TypeConverter
-import com.example.bundlemaker2.data.local.entity.MappingStatus
+import com.example.bundlemaker2.domain.model.MappingStatus
 import java.time.Instant
 
 /**

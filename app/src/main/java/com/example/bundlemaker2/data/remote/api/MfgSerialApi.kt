@@ -1,7 +1,7 @@
 package com.example.bundlemaker2.data.remote.api
 
-import com.example.bundlemaker2.data.model.api.MappingsBulkRequest
-import com.example.bundlemaker2.data.model.api.MappingsBulkResponse
+import com.example.bundlemaker2.data.remote.model.MappingsBulkRequest
+import com.example.bundlemaker2.data.remote.model.MappingsBulkResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET

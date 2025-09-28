@@ -1,12 +1,11 @@
-// app/src/main/java/com/example/bundlemaker2/ui/main/MainViewModel.kt
 package com.example.bundlemaker2.ui.main
 
 import androidx.lifecycle.viewModelScope
-import com.example.bundlemaker2.data.local.entity.MappingStatus
-import com.example.bundlemaker2.data.local.entity.MfgSerialMapping
-import com.example.bundlemaker2.data.local.entity.WorkSession
-import com.example.bundlemaker2.data.repository.MfgSerialMappingRepository
-import com.example.bundlemaker2.data.repository.WorkSessionRepository
+import com.example.bundlemaker2.domain.model.MappingStatus
+import com.example.bundlemaker2.domain.model.MfgSerialMapping
+import com.example.bundlemaker2.domain.model.WorkSession
+import com.example.bundlemaker2.domain.repository.MfgSerialMappingRepository
+import com.example.bundlemaker2.domain.repository.WorkSessionRepository
 import com.example.bundlemaker2.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch

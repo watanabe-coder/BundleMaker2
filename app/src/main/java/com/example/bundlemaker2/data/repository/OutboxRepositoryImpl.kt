@@ -3,6 +3,7 @@ package com.example.bundlemaker2.data.repository
 import com.example.bundlemaker2.data.local.dao.OutboxDao
 import com.example.bundlemaker2.data.local.entity.Outbox
 import com.example.bundlemaker2.data.local.entity.OutboxState
+import com.example.bundlemaker2.domain.repository.OutboxRepository
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import javax.inject.Inject
