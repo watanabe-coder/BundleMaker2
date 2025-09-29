@@ -36,6 +36,8 @@
     <string name="confirm_delete_negative">キャンセル</string>
     <string name="registration_completed">登録が完了しました</string>
     <string name="error_occurred">エラーが発生しました</string>
+    <string name="manufacturing_number">製造番号</string>
+    <string name="serial_number">シリアル番号</string>
 
     <!-- Scan Input Dialog -->
     <string name="scan_title">製造番号をスキャン</string>

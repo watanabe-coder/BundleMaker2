@@ -17,7 +17,7 @@ import com.example.bundlemaker2.util.Constants.EXTRA_SERIAL_IDS
 class ConfirmActivity : AppCompatActivity() {
     private lateinit var binding: ActivityConfirmBinding
     private lateinit var adapter: ConfirmListAdapter
-    private val serialIds = mutableListOf<String>()
+    private val serialItems = mutableListOf<Pair<String, String>>() // Pair of (mfgId, serialId)
     private var mfgId: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,7 +33,7 @@ class ConfirmActivity : AppCompatActivity() {
         // インテントからデータを取得
         mfgId = intent.getStringExtra(EXTRA_MFG_ID) ?: ""
         val serials = intent.getStringArrayListExtra(EXTRA_SERIAL_IDS) ?: arrayListOf()
-        serialIds.addAll(serials)
+        serialItems.addAll(serials.map { mfgId to it })
 
         // UIの初期化
         initViews()
@@ -45,7 +45,7 @@ class ConfirmActivity : AppCompatActivity() {
         binding.mfgIdText.text = mfgId
         // シリアル番号の件数を表示
         binding.serialCountText.text = resources.getQuantityString(
-            R.plurals.serial_count, serialIds.size, serialIds.size
+            R.plurals.serial_count, serialItems.size, serialItems.size
         )
 
         // 確定ボタンのクリックリスナー
@@ -61,16 +61,16 @@ class ConfirmActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        adapter = ConfirmListAdapter(serialIds.toList()) { position ->
+        adapter = ConfirmListAdapter(serialItems.toList()) { position ->
             // アイテム削除時の処理
-            serialIds.removeAt(position)
-            adapter.updateList(serialIds.toList())
+            serialItems.removeAt(position)
+            adapter.updateList(serialItems.toList())
             // 件数を更新
             binding.serialCountText.text = resources.getQuantityString(
-                R.plurals.serial_count, serialIds.size, serialIds.size
+                R.plurals.serial_count, serialItems.size, serialItems.size
             )
             // アイテムが0件の場合は確定ボタンを無効化
-            binding.confirmButton.isEnabled = serialIds.isNotEmpty()
+            binding.confirmButton.isEnabled = serialItems.isNotEmpty()
         }
 
         val recyclerView = binding.recyclerView
@@ -85,13 +85,14 @@ class ConfirmActivity : AppCompatActivity() {
     }
 
     private fun confirmAndFinish() {
-        if (serialIds.isEmpty()) {
+        if (serialItems.isEmpty()) {
             Toast.makeText(this, R.string.error_no_serials, Toast.LENGTH_SHORT).show()
             return
         }
 
         val resultIntent = Intent().apply {
-            putExtra(EXTRA_CONFIRMED_SERIAL_IDS, ArrayList(serialIds))
+            // Extract just the serial IDs for the result
+            putExtra(EXTRA_CONFIRMED_SERIAL_IDS, ArrayList(serialItems.map { it.second }))
         }
         setResult(Activity.RESULT_OK, resultIntent)
         finish()

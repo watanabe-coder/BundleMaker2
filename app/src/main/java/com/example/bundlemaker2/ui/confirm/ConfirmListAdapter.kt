@@ -7,12 +7,15 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bundlemaker2.R
 
+typealias MfgSerialPair = Pair<String, String>  // First is mfgId, second is serialId
+
 class ConfirmListAdapter(
-    private var items: List<String>,
+    private var items: List<MfgSerialPair>,
     private val onItemDelete: (Int) -> Unit
 ) : RecyclerView.Adapter<ConfirmListAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val mfgIdText: TextView = view.findViewById(R.id.mfgIdText)
         val serialNumberText: TextView = view.findViewById(R.id.serialNumberText)
         val deleteButton: View = view.findViewById(R.id.deleteButton)
     }
@@ -24,8 +27,9 @@ class ConfirmListAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = items[position]
-        holder.serialNumberText.text = item
+        val (mfgId, serialId) = items[position]
+        holder.mfgIdText.text = mfgId
+        holder.serialNumberText.text = serialId
         holder.deleteButton.setOnClickListener {
             onItemDelete(position)
         }
@@ -33,7 +37,7 @@ class ConfirmListAdapter(
 
     override fun getItemCount() = items.size
 
-    fun updateList(newItems: List<String>) {
+    fun updateList(newItems: List<MfgSerialPair>) {
         items = newItems
         notifyDataSetChanged()
     }
