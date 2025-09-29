@@ -30,7 +30,9 @@ class LoginActivity : AppCompatActivity() {
             if (isUserCodeValid(userCode)) {
                 errorText.visibility = TextView.GONE
                 Toast.makeText(this, "ログイン成功", Toast.LENGTH_SHORT).show()
-                val intent = Intent(this, MainActivity::class.java)
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    putExtra("EXTRA_USER_CODE", userCode)
+                }
                 startActivity(intent)
                 finish()
             } else {

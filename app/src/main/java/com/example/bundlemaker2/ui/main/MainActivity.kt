@@ -13,6 +13,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.example.bundlemaker2.R
 import com.example.bundlemaker2.ui.common.ScanInputDialog
 import com.example.bundlemaker2.ui.login.LoginActivity
+import com.example.bundlemaker2.util.EmployeeHelper
 
 // Constants for intent extras
 private const val EXTRA_MFG_ID = "extra_mfg_id"
@@ -36,7 +37,11 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        val userName = intent.getStringExtra("EXTRA_USER_NAME") ?: ""
+        // Initialize EmployeeHelper
+        EmployeeHelper.initialize(applicationContext)
+        
+        val userCode = intent.getStringExtra("EXTRA_USER_CODE") ?: ""
+        val userName = EmployeeHelper.getUserName(userCode)
         val workerTextView = findViewById<TextView>(R.id.workerInfoText)
         workerTextView.text = "作業者：$userName"
 
