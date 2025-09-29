@@ -1,11 +1,14 @@
 package com.example.bundlemaker2.ui.main
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.ViewCompat
@@ -19,17 +22,28 @@ import com.example.bundlemaker2.util.EmployeeHelper
 private const val EXTRA_MFG_ID = "extra_mfg_id"
 private const val EXTRA_SERIAL_IDS = "extra_serial_ids"
 private const val EXTRA_CONFIRMED_SERIAL_IDS = "extra_confirmed_serial_ids"
+private const val REQUEST_CODE_CONFIRM = 1001
 
 class MainActivity : AppCompatActivity() {
     private var currentMfgId: String = ""
     private val serialIds = mutableListOf<String>()
     private var isBundleMode = false
+    private var isWaitingForSerials = false
 
     private fun handleConfirmedSerials(confirmedSerials: ArrayList<String>?) {
         confirmedSerials?.let {
             showToast("${it.size}件のシリアル番号を確定しました")
+            // 確定後の処理（必要に応じてデータベースへの保存などを行う）
+            saveConfirmedSerials(it)
+            // 状態をリセット
+            currentMfgId = ""
             serialIds.clear()
         }
+    }
+
+    private fun saveConfirmedSerials(serials: List<String>) {
+        // TODO: データベースに保存する処理を実装
+        // 例: repository.saveConfirmedSerials(currentMfgId, serials)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,42 +75,52 @@ class MainActivity : AppCompatActivity() {
         // Set up button click listeners
         findViewById<View>(R.id.bundleButton).setOnClickListener {
             isBundleMode = true
+            isWaitingForSerials = false
             showScanInputDialog(
                 title = getString(R.string.bundle_manufacturing_number),
-                hint = getString(R.string.input_manufacturer_id_hint)
-            ) { input ->
-                currentMfgId = input
-                showToast("製造番号が設定されました: $input")
-                // シリアル番号入力に進む
-                showScanInputDialog(
-                    title = getString(R.string.input_serial_number),
-                    hint = getString(R.string.input_serial_number_hint)
-                ) { serial ->
-                    serialIds.add(serial)
-                    showToast("シリアル番号が追加されました: $serial")
-                }
-            }
+                hint = getString(R.string.input_manufacturer_id_hint),
+                onInput = { input ->
+                    currentMfgId = input
+                    isWaitingForSerials = true
+                    showToast("製造番号が設定されました: $input")
+                    // シリアル番号入力に進む
+                    showNextSerialInputDialog()
+                },
+                showCancel = false,
+                onCancel = null
+            )
         }
 
         findViewById<View>(R.id.unitButton).setOnClickListener {
             isBundleMode = false
             showScanInputDialog(
                 title = getString(R.string.unit_serial_number),
-                hint = getString(R.string.input_serial_number_hint)
-            ) { input ->
-                currentMfgId = "" // ユニットモードでは製造番号は不要
-                serialIds.clear()
-                serialIds.add(input)
-                showToast("ユニットシリアル番号が設定されました: $input")
-            }
+                hint = getString(R.string.input_serial_number_hint),
+                onInput = { input ->
+                    currentMfgId = "" // ユニットモードでは製造番号は不要
+                    serialIds.clear()
+                    serialIds.add(input)
+                    showToast("ユニットシリアル番号が設定されました: $input")
+                },
+                showCancel = false,
+                onCancel = null
+            )
         }
 
         findViewById<View>(R.id.confirmButton).setOnClickListener {
-            if (currentMfgId.isBlank() || serialIds.isEmpty()) {
-                showToast("製造番号とシリアル番号を入力してください")
+            if (!isWaitingForSerials && serialIds.isEmpty()) {
+                showToast("シリアル番号が入力されていません")
                 return@setOnClickListener
             }
-            navigateToConfirm()
+            if (isBundleMode && currentMfgId.isBlank()) {
+                showToast("製造番号が設定されていません")
+                return@setOnClickListener
+            }
+            if (serialIds.isNotEmpty()) {
+                navigateToConfirm()
+            } else {
+                showToast("シリアル番号を入力してください")
+            }
         }
 
         // Set up menu and refresh button click listeners
@@ -114,19 +138,80 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
+    private val confirmActivityLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result: ActivityResult ->
+        when (result.resultCode) {
+            Activity.RESULT_OK -> {
+                val confirmedSerials = result.data?.getStringArrayListExtra(EXTRA_CONFIRMED_SERIAL_IDS)
+                handleConfirmedSerials(confirmedSerials)
+            }
+            Activity.RESULT_CANCELED -> {
+                // 確認画面でキャンセルされた場合の処理
+                showToast("キャンセルされました")
+            }
+        }
+    }
+
     private fun navigateToConfirm() {
-        // In the minimal version, we'll just show a toast
+        if (currentMfgId.isBlank()) {
+            showToast("製造番号が設定されていません")
+            return
+        }
+        if (serialIds.isEmpty()) {
+            showToast("シリアル番号が入力されていません")
+            return
+        }
+
+        // TODO: ConfirmActivityが実装されたら有効化する
+        // val intent = Intent(this, ConfirmActivity::class.java).apply {
+        //     putExtra(EXTRA_MFG_ID, currentMfgId)
+        //     putStringArrayListExtra(EXTRA_SERIAL_IDS, ArrayList(serialIds))
+        // }
+        // confirmActivityLauncher.launch(intent)
+        
+        // 暫定実装: ConfirmActivityが実装されるまでトーストで代用
         showToast("${serialIds.size}件のシリアル番号を確認しました")
-        serialIds.clear()
+        handleConfirmedSerials(ArrayList(serialIds))
+    }
+
+    private fun showNextSerialInputDialog() {
+        showScanInputDialog(
+            title = getString(R.string.input_serial_number),
+            hint = getString(R.string.input_serial_number_hint),
+            onInput = { serial ->
+                if (serial.isNotBlank()) {
+                    serialIds.add(serial)
+                    showToast("シリアル番号が追加されました: $serial (${serialIds.size}件)")
+                    // 次の入力を待つ
+                    showNextSerialInputDialog()
+                }
+            },
+            showCancel = serialIds.isNotEmpty(),
+            onCancel = {
+                // キャンセルされたら確認に進む
+                if (serialIds.isNotEmpty()) {
+                    navigateToConfirm()
+                } else {
+                    showToast("シリアル番号が入力されていません")
+                }
+            }
+        )
     }
 
     private fun showScanInputDialog(
         title: String,
         hint: String,
-        onInput: (String) -> Unit
+        onInput: (String) -> Unit,
+        showCancel: Boolean = false,
+        onCancel: (() -> Unit)? = null
     ) {
-        val dialog = ScanInputDialog(title, hint) { input ->
-            onInput(input)
+        val dialog = ScanInputDialog(title, hint, showCancel) { input, isCancelled ->
+            if (isCancelled) {
+                onCancel?.invoke()
+            } else {
+                onInput(input)
+            }
         }
         dialog.show(supportFragmentManager, ScanInputDialog.Companion.TAG)
     }

@@ -14,7 +14,8 @@ import com.example.bundlemaker2.R
 class ScanInputDialog(
     private val title: String,
     private val hint: String,
-    private val onPositiveClick: (String) -> Unit
+    private val showCancel: Boolean = false,
+    private val onInput: (String, Boolean) -> Unit
 ) : DialogFragment() {
 
     private lateinit var editText: EditText
@@ -34,21 +35,27 @@ class ScanInputDialog(
         editText.requestFocus()
         dialog?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
 
-        return AlertDialog.Builder(requireContext())
+        val builder = AlertDialog.Builder(requireContext())
             .setView(view)
             .setCancelable(false)
             .setPositiveButton(R.string.ok) { _, _ ->
                 val input = editText.text.toString().trim()
                 if (input.isNotEmpty()) {
-                    onPositiveClick(input)
+                    onInput(input, false)
                 }
             }
-            .setNegativeButton(R.string.cancel, null)
             .setNeutralButton(R.string.scan) { _, _ ->
                 // TODO: Implement barcode scanning
                 showToast("バーコードスキャンを開始します")
             }
-            .create()
+        
+        if (showCancel) {
+            builder.setNegativeButton(R.string.cancel) { _, _ ->
+                onInput("", true)
+            }
+        }
+        
+        return builder.create()
     }
 
     override fun onDestroyView() {
