@@ -6,34 +6,28 @@ import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.bundlemaker2.R
-import com.example.bundlemaker2.core.util.Constants
 import com.example.bundlemaker2.ui.common.ScanInputDialog
-import com.example.bundlemaker2.ui.confirm.ConfirmActivity
 import com.example.bundlemaker2.ui.login.LoginActivity
+
+// Constants for intent extras
+private const val EXTRA_MFG_ID = "extra_mfg_id"
+private const val EXTRA_SERIAL_IDS = "extra_serial_ids"
+private const val EXTRA_CONFIRMED_SERIAL_IDS = "extra_confirmed_serial_ids"
 
 class MainActivity : AppCompatActivity() {
     private var currentMfgId: String = ""
     private val serialIds = mutableListOf<String>()
     private var isBundleMode = false
 
-    private val confirmActivityResult = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val confirmedSerials = result.data?.getStringArrayListExtra(Constants.EXTRA_CONFIRMED_SERIAL_IDS)
-            confirmedSerials?.let {
-                // Handle confirmed serials (save to database, etc.)
-                showToast("${it.size}件のシリアル番号を確定しました")
-                serialIds.clear()
-            }
-        } else {
-            showToast("キャンセルされました")
+    private fun handleConfirmedSerials(confirmedSerials: ArrayList<String>?) {
+        confirmedSerials?.let {
+            showToast("${it.size}件のシリアル番号を確定しました")
+            serialIds.clear()
         }
     }
 
@@ -102,7 +96,7 @@ class MainActivity : AppCompatActivity() {
 
         // Set up menu and refresh button click listeners
         findViewById<View>(R.id.menuButton).setOnClickListener { view ->
-                showPopupMenu(view)
+            showPopupMenu(view)
         }
 
         findViewById<View>(R.id.refreshButton).setOnClickListener {
@@ -116,11 +110,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun navigateToConfirm() {
-        val intent = Intent(this, ConfirmActivity::class.java).apply {
-            putExtra(Constants.EXTRA_MFG_ID, currentMfgId)
-            putStringArrayListExtra(Constants.EXTRA_SERIAL_IDS, ArrayList(serialIds))
-        }
-        confirmActivityResult.launch(intent)
+        // In the minimal version, we'll just show a toast
+        showToast("${serialIds.size}件のシリアル番号を確認しました")
+        serialIds.clear()
     }
 
     private fun showScanInputDialog(
@@ -149,9 +141,9 @@ class MainActivity : AppCompatActivity() {
                 R.id.action_logout -> {
                     // ログアウト処理
                     showToast("ログアウトします")
-                    // ログイン画面に戻る
-                    val intent = Intent(this, LoginActivity::class.java).apply {
-                        Intent.setFlags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    // ログイン画面に遷移
+                    val intent = Intent(this@MainActivity, LoginActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     }
                     startActivity(intent)
                     finish()

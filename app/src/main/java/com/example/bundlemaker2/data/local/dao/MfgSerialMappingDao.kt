@@ -42,4 +42,42 @@ interface MfgSerialMappingDao {
     
     @Query("DELETE FROM mfg_serial_mappings")
     suspend fun deleteAll()
+
+    // バッチ挿入
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(mappings: List<MfgSerialMappingEntity>): List<Long>
+
+    // バッチ更新
+    @Update
+    suspend fun updateAll(mappings: List<MfgSerialMappingEntity>)
+
+    // バッチ削除
+    @Delete
+    suspend fun deleteAll(mappings: List<MfgSerialMappingEntity>)
+
+    // 重複チェック用
+    @Query("SELECT COUNT(*) FROM mfg_serial_mappings WHERE mfgId = :mfgId AND serialId = :serialId")
+    suspend fun countByMfgIdAndSerialId(mfgId: String, serialId: String): Int
+}
+
+// トランザクション処理や複雑な操作は拡張関数として実装
+suspend fun MfgSerialMappingDao.insertWithValidation(mapping: MfgSerialMappingEntity): Result<Long> {
+    return try {
+        val id = insert(mapping)
+        Result.success(id)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+}
+
+// バッチ挿入のトランザクション処理
+suspend fun MfgSerialMappingDao.insertAllWithValidation(
+    mappings: List<MfgSerialMappingEntity>
+): Result<List<Long>> {
+    return try {
+        val ids = insertAll(mappings)
+        Result.success(ids)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }

@@ -1,184 +1,108 @@
 package com.example.bundlemaker2.ui.main
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bundlemaker2.domain.model.MappingStatus
 import com.example.bundlemaker2.domain.model.MfgSerialMapping
-import com.example.bundlemaker2.domain.model.WorkSession
 import com.example.bundlemaker2.domain.repository.MfgSerialMappingRepository
-import com.example.bundlemaker2.domain.repository.WorkSessionRepository
-import com.example.bundlemaker2.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.time.Instant
 import javax.inject.Inject
-
-data class MainUiState(
-    val mfgId: String = "",
-    val serialId: String = "",
-    val scannedCount: Int = 0,
-    val successCount: Int = 0,
-    val errorCount: Int = 0,
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val isSessionActive: Boolean = false
-)
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val mfgSerialRepository: MfgSerialMappingRepository,
-    private val workSessionRepository: WorkSessionRepository
-) : BaseViewModel<MainUiState>() {
+    private val repository: MfgSerialMappingRepository
+) : ViewModel() {
 
-    override fun initialUiState(): MainUiState = MainUiState()
+    private val _uiState = MutableStateFlow<MainUiState>(MainUiState())
+    val uiState: StateFlow<MainUiState> = _uiState
 
-    init {
-        loadCounts()
-        checkActiveSession()
-    }
+    // 選択中のマッピングID
+    private val _selectedIds = mutableSetOf<Long>()
+    val selectedIds: Set<Long> get() = _selectedIds
 
-    private fun loadCounts() {
-        viewModelScope.launch {
-            mfgSerialRepository.countByStatus(MappingStatus.SENT).collect { successCount ->
-                _uiState.value = _uiState.value.copy(successCount = successCount)
-            }
+    // 選択状態の切り替え
+    fun toggleSelection(id: Long) {
+        if (_selectedIds.contains(id)) {
+            _selectedIds.remove(id)
+        } else {
+            _selectedIds.add(id)
         }
-
-        viewModelScope.launch {
-            mfgSerialRepository.countByStatus(MappingStatus.ERROR).collect { errorCount ->
-                _uiState.value = _uiState.value.copy(errorCount = errorCount)
-            }
-        }
+        _uiState.value = _uiState.value.copy(selectedCount = _selectedIds.size)
     }
 
-    fun onMfgIdChanged(mfgId: String) {
-        _uiState.value = _uiState.value.copy(mfgId = mfgId)
+    // 選択をクリア
+    fun clearSelection() {
+        _selectedIds.clear()
+        _uiState.value = _uiState.value.copy(selectedCount = 0)
     }
 
-    fun onSerialIdChanged(serialId: String) {
-        _uiState.value = _uiState.value.copy(serialId = serialId)
-    }
-
-    fun onScanButtonClicked() {
-        val mfgId = _uiState.value.mfgId
-        val serialId = _uiState.value.serialId
-
-        if (mfgId.isBlank() || serialId.isBlank()) {
-            _uiState.value = _uiState.value.copy(error = "製造番号とシリアル番号を入力してください")
-            return
-        }
+    // ステータスを一括更新
+    fun updateStatus(status: MappingStatus) {
+        if (_selectedIds.isEmpty()) return
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-
             try {
-                // マッピングを追加
-                val mapping = MfgSerialMapping(
-                    mfgId = mfgId,
-                    serialId = serialId,
-                    scannedAt = Instant.now(),
-                    status = MappingStatus.DRAFT
-                )
-                val result = runCatching {
-                    mfgSerialRepository.insert(mapping)
-                }
-
-                result.onSuccess {
+                repository.updateStatuses(_selectedIds.toList(), status).onSuccess {
+                    clearSelection()
                     _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        serialId = "",
-                        scannedCount = _uiState.value.scannedCount + 1,
-                        error = null
+                        message = "${_selectedIds.size}件を更新しました",
+                        showMessage = true
                     )
-                }.onFailure { exception ->
+                }.onFailure { e ->
                     _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = exception.message ?: "エラーが発生しました"
+                        error = e.message ?: "エラーが発生しました",
+                        showError = true
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "予期せぬエラーが発生しました"
+                    error = e.message ?: "エラーが発生しました",
+                    showError = true
                 )
             }
         }
     }
 
-    private fun checkActiveSession() {
-        viewModelScope.launch {
-            val mfgId = _uiState.value.mfgId
-            if (mfgId.isNotBlank()) {
-                val latestSession = workSessionRepository.getLatestByMfgId(mfgId)
-                _uiState.value = _uiState.value.copy(
-                    isSessionActive = latestSession?.endedAt == null
-                )
-            }
-        }
-    }
-
-    fun startNewSession() {
-        val mfgId = _uiState.value.mfgId
-        if (mfgId.isBlank()) {
-            _uiState.value = _uiState.value.copy(error = "製造番号を入力してください")
-            return
-        }
+    // 選択したアイテムを削除
+    fun deleteSelected() {
+        if (_selectedIds.isEmpty()) return
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-
             try {
-                val workSession = WorkSession(
-                    mfgId = mfgId,
-                    startedAt = Instant.now(),
-                    endedAt = null
-                )
-                workSessionRepository.insert(workSession)
-
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    isSessionActive = true
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "セッションの開始に失敗しました"
-                )
-            }
-        }
-    }
-
-    fun endCurrentSession() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-
-            try {
-                // 最新のセッションを取得して終了
-                val mfgId = _uiState.value.mfgId
-                if (mfgId.isNotBlank()) {
-                    val latestSession = workSessionRepository.getLatestByMfgId(mfgId)
-                    latestSession?.let { session ->
-                        val updatedSession = session.copy(endedAt = Instant.now())
-                        workSessionRepository.update(updatedSession)
-
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            isSessionActive = false,
-                            mfgId = "",
-                            serialId = ""
-                        )
-                    } ?: run {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = "アクティブなセッションが見つかりません"
-                        )
+                // Delete each selected mapping one by one
+                _selectedIds.forEach { id ->
+                    repository.getById(id)?.let { mapping ->
+                        repository.delete(mapping)
                     }
                 }
+                clearSelection()
+                _uiState.value = _uiState.value.copy(
+                    message = "${_selectedIds.size}件を削除しました",
+                    showMessage = true
+                )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "予期せぬエラーが発生しました"
+                    error = e.message ?: "削除に失敗しました",
+                    showError = true
                 )
             }
         }
     }
+
+    // メッセージを閉じる
+    fun dismissMessage() {
+        _uiState.value = _uiState.value.copy(showMessage = false, showError = false)
+    }
 }
+
+// UI状態を保持するデータクラス
+data class MainUiState(
+    val selectedCount: Int = 0,
+    val message: String = "",
+    val error: String = "",
+    val showMessage: Boolean = false,
+    val showError: Boolean = false
+)
