@@ -59,37 +59,37 @@ graph TD
   - シリアル番号リスト (serialIds)
 - **バックスタック**: 通常の戻る動作（シリアル番号スキャン状態に戻る）
 
-## 3. インテントの使用方法
+## 3. 確認ボタン押下時の詳細挙動
 
-### 3.1 ログイン画面 → メイン画面
-```kotlin
-val intent = Intent(this, MainActivity::class.java)
-intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-startActivity(intent)
-finish()
-```
+### 3.1 確認ボタンが押されたとき
+1. **データ検証**: スキャンした製造番号とシリアル番号リストの妥当性チェック
+2. **重複チェック**: データベース内で (mfgId, serialId) の組み合わせが重複していないか確認
+3. **確認画面への遷移**: 
+   - 製造番号 (mfgId) をパラメータとして渡す
+   - シリアル番号リスト (serialIds) をパラメータとして渡す
+   - 確認画面 (ConfirmActivity) を起動
 
-### 3.2 メイン画面 → 確認画面
-```kotlin
-val intent = Intent(this, ConfirmActivity::class.java).apply {
-    putExtra(EXTRA_MFG_ID, mfgId)
-    putStringArrayListExtra(EXTRA_SERIAL_IDS, ArrayList(serialIds))
-}
-startActivityForResult(intent, REQUEST_CODE_CONFIRM)
-```
+### 3.2 確認画面での表示内容
+- **一覧表示**: MFG × Serial の組み合わせを表形式で表示
+- **編集機能**: 個別レコードの削除が可能（任意）
+- **確定ボタン**: データをRoomDBに保存してメイン画面に戻る
+- **戻るボタン**: 変更を破棄してシリアル番号スキャン状態に戻る
 
-### 3.3 確認画面 → メイン画面（確定時）
-```kotlin
-val resultIntent = Intent().apply {
-    putExtra(EXTRA_IS_CONFIRMED, true)
-    putStringArrayListExtra(EXTRA_CONFIRMED_SERIAL_IDS, ArrayList(confirmedSerials))
-}
-setResult(Activity.RESULT_OK, resultIntent)
-finish()
-```
+### 3.3 確定ボタン押下時の処理
+1. **データ保存**: MfgSerialMappingテーブルにstatus='READY'で保存
+2. **状態更新**: 各レコードにscannedAt（スキャン時刻）を記録
+3. **画面遷移**: メイン画面に戻る
+4. **状態リセット**: 製造番号とシリアル番号リストをクリア
 
-### 3.4 確認画面 → メイン画面（キャンセル時）
-```kotlin
+## 4. パラメータ定義
+
+### 確認画面へのパラメータ
+- `mfgId`: String - 製造番号
+- `serialIds`: List<String> - シリアル番号リスト
+
+### 確認画面からの戻り値
+- `isConfirmed`: Boolean - 確定されたかどうか
+- `confirmedSerials`: List<String> - 確定されたシリアル番号リスト
 setResult(Activity.RESULT_CANCELED)
 finish()
 ```

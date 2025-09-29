@@ -2,7 +2,7 @@ package com.example.bundlemaker2.di
 
 import android.content.Context
 import com.example.bundlemaker2.data.database.AppDatabase
-import com.example.bundlemaker2.data.local.dao.MfgSerialMappingDao
+import com.example.bundlemaker2.data.dao.MfgSerialDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,7 +20,7 @@ object AppModule {
     }
 
     @Provides
-    fun provideMfgSerialMappingDao(database: AppDatabase): MfgSerialMappingDao {
-        return database.mfgSerialMappingDao()
+    fun provideMfgSerialDao(database: AppDatabase): MfgSerialDao {
+        return database.mfgSerialDao()
     }
 }

@@ -14,15 +14,20 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.bundlemaker2.R
+import com.example.bundlemaker2.data.database.AppDatabase
+import com.example.bundlemaker2.data.repository.MfgSerialRepository
 import com.example.bundlemaker2.ui.common.ScanInputDialog
+import com.example.bundlemaker2.ui.confirm.ConfirmActivity
 import com.example.bundlemaker2.ui.login.LoginActivity
 import com.example.bundlemaker2.util.EmployeeHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-// Constants for intent extras
-private const val EXTRA_MFG_ID = "extra_mfg_id"
-private const val EXTRA_SERIAL_IDS = "extra_serial_ids"
-private const val EXTRA_CONFIRMED_SERIAL_IDS = "extra_confirmed_serial_ids"
-private const val REQUEST_CODE_CONFIRM = 1001
+import com.example.bundlemaker2.util.Constants.EXTRA_CONFIRMED_SERIAL_IDS
+import com.example.bundlemaker2.util.Constants.EXTRA_MFG_ID
+import com.example.bundlemaker2.util.Constants.EXTRA_SERIAL_IDS
 
 class MainActivity : AppCompatActivity() {
     private var currentMfgId: String = ""
@@ -32,18 +37,44 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleConfirmedSerials(confirmedSerials: ArrayList<String>?) {
         confirmedSerials?.let {
-            showToast("${it.size}件のシリアル番号を確定しました")
-            // 確定後の処理（必要に応じてデータベースへの保存などを行う）
-            saveConfirmedSerials(it)
-            // 状態をリセット
-            currentMfgId = ""
-            serialIds.clear()
+            if (it.isNotEmpty()) {
+                showToast("${it.size}件のシリアル番号を確定しました")
+                // データベースに保存
+                saveConfirmedSerials(it)
+                // 状態をリセット
+                serialIds.clear()
+                if (isBundleMode) {
+                    currentMfgId = ""
+                    isWaitingForSerials = false
+                }
+            }
         }
     }
 
+    private val database by lazy { AppDatabase.getDatabase(this) }
+    private val mfgSerialDao by lazy { database.mfgSerialDao() }
+    private val mfgSerialRepository by lazy { MfgSerialRepository(mfgSerialDao) }
+
     private fun saveConfirmedSerials(serials: List<String>) {
-        // TODO: データベースに保存する処理を実装
-        // 例: repository.saveConfirmedSerials(currentMfgId, serials)
+        if (serials.isEmpty()) return
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val success = mfgSerialRepository.saveMfgSerials(currentMfgId, serials)
+                withContext(Dispatchers.Main) {
+                    if (success) {
+                        showToast("${serials.size}件のシリアル番号を保存しました")
+                    } else {
+                        showToast("シリアル番号の保存に失敗しました")
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    showToast("エラーが発生しました: ${e.message}")
+                }
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -154,7 +185,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun navigateToConfirm() {
-        if (currentMfgId.isBlank()) {
+        if (isBundleMode && currentMfgId.isBlank()) {
             showToast("製造番号が設定されていません")
             return
         }
@@ -163,16 +194,37 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // TODO: ConfirmActivityが実装されたら有効化する
-        // val intent = Intent(this, ConfirmActivity::class.java).apply {
-        //     putExtra(EXTRA_MFG_ID, currentMfgId)
-        //     putStringArrayListExtra(EXTRA_SERIAL_IDS, ArrayList(serialIds))
-        // }
-        // confirmActivityLauncher.launch(intent)
-        
-        // 暫定実装: ConfirmActivityが実装されるまでトーストで代用
-        showToast("${serialIds.size}件のシリアル番号を確認しました")
-        handleConfirmedSerials(ArrayList(serialIds))
+        // 重複チェック
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val duplicates = serialIds.filter { serialId ->
+                    mfgSerialRepository.isSerialExists(serialId)
+                }
+                
+                withContext(Dispatchers.Main) {
+                    if (duplicates.isNotEmpty()) {
+                        showToast("以下のシリアル番号は既に登録されています: ${duplicates.take(3).joinToString()}")
+                        if (duplicates.size > 3) {
+                            showToast("他に${duplicates.size - 3}件の重複があります")
+                        }
+                        return@withContext
+                    }
+                    
+                    // 重複がなければ確認画面へ
+                    val mfgIdToPass = if (isBundleMode) currentMfgId else ""
+                    val intent = Intent(this@MainActivity, ConfirmActivity::class.java).apply {
+                        putExtra(EXTRA_MFG_ID, mfgIdToPass)
+                        putStringArrayListExtra(EXTRA_SERIAL_IDS, ArrayList(serialIds))
+                    }
+                    confirmActivityLauncher.launch(intent)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    showToast("エラーが発生しました: ${e.message}")
+                }
+            }
+        }
     }
 
     private fun showNextSerialInputDialog() {
@@ -181,10 +233,27 @@ class MainActivity : AppCompatActivity() {
             hint = getString(R.string.input_serial_number_hint),
             onInput = { serial ->
                 if (serial.isNotBlank()) {
-                    serialIds.add(serial)
-                    showToast("シリアル番号が追加されました: $serial (${serialIds.size}件)")
-                    // 次の入力を待つ
-                    showNextSerialInputDialog()
+                    // 重複チェック
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            val isDuplicate = mfgSerialRepository.isSerialExists(serial)
+                            withContext(Dispatchers.Main) {
+                                if (isDuplicate) {
+                                    showToast("このシリアル番号は既に登録されています: $serial")
+                                } else {
+                                    serialIds.add(serial)
+                                    showToast("シリアル番号が追加されました: $serial (${serialIds.size}件)")
+                                }
+                                // 次の入力を待つ
+                                showNextSerialInputDialog()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            withContext(Dispatchers.Main) {
+                                showToast("エラーが発生しました: ${e.message}")
+                            }
+                        }
+                    }
                 }
             },
             showCancel = serialIds.isNotEmpty(),

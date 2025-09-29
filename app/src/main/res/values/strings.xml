@@ -25,7 +25,17 @@
     <string name="confirm_button">確定</string>
     <string name="cancel_button">キャンセル</string>
     <string name="label_manufacturer_id">製造番号:</string>
-    <string name="item_count">%1$d件</string>
+    <plurals name="serial_count">
+        <item quantity="one">%d 件のシリアル番号</item>
+        <item quantity="other">%d 件のシリアル番号</item>
+    </plurals>
+    <string name="delete_serial">削除</string>
+    <string name="error_no_serials">シリアル番号が選択されていません</string>
+    <string name="confirm_delete_message">このシリアル番号を削除しますか？</string>
+    <string name="confirm_delete_positive">削除</string>
+    <string name="confirm_delete_negative">キャンセル</string>
+    <string name="registration_completed">登録が完了しました</string>
+    <string name="error_occurred">エラーが発生しました</string>
 
     <!-- Scan Input Dialog -->
     <string name="scan_title">製造番号をスキャン</string>
@@ -34,4 +44,5 @@
     <string name="scan">スキャン</string>
     <string name="ok">OK</string>
     <string name="cancel">キャンセル</string>
+    <string name="item_count">%1$d件</string>
 </resources>

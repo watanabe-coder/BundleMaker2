@@ -2,18 +2,20 @@ package com.example.bundlemaker2.ui.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bundlemaker2.domain.model.MappingStatus
-import com.example.bundlemaker2.domain.model.MfgSerialMapping
-import com.example.bundlemaker2.domain.repository.MfgSerialMappingRepository
+import com.example.bundlemaker2.data.model.MfgSerialMapping
+import com.example.bundlemaker2.data.repository.MfgSerialRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val repository: MfgSerialMappingRepository
+    private val repository: MfgSerialRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MainUiState>(MainUiState())
@@ -40,28 +42,35 @@ class MainViewModel @Inject constructor(
     }
 
     // ステータスを一括更新
-    fun updateStatus(status: MappingStatus) {
+    fun updateStatus(newStatus: String) {
         if (_selectedIds.isEmpty()) return
 
         viewModelScope.launch {
             try {
-                repository.updateStatuses(_selectedIds.toList(), status).onSuccess {
-                    clearSelection()
-                    _uiState.value = _uiState.value.copy(
+                // 選択された各IDのステータスを更新
+                _selectedIds.forEach { id ->
+                    // リポジトリから現在のマッピングを取得して更新
+                    val mapping = repository.getMappingById(id)
+                    mapping?.let { mapping ->
+                        val updated = mapping.copy(status = newStatus)
+                        repository.update(updated)
+                    }
+                }
+                
+                clearSelection()
+                _uiState.update { currentState ->
+                    currentState.copy(
                         message = "${_selectedIds.size}件を更新しました",
                         showMessage = true
                     )
-                }.onFailure { e ->
-                    _uiState.value = _uiState.value.copy(
+                }
+            } catch (e: Exception) {
+                _uiState.update { currentState ->
+                    currentState.copy(
                         error = e.message ?: "エラーが発生しました",
                         showError = true
                     )
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = e.message ?: "エラーが発生しました",
-                    showError = true
-                )
             }
         }
     }
@@ -72,22 +81,26 @@ class MainViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                // Delete each selected mapping one by one
+                // 選択された各IDを削除
                 _selectedIds.forEach { id ->
-                    repository.getById(id)?.let { mapping ->
-                        repository.delete(mapping)
-                    }
+                    val mapping = repository.getMappingById(id)
+                    mapping?.let { repository.delete(it) }
                 }
+                
                 clearSelection()
-                _uiState.value = _uiState.value.copy(
-                    message = "${_selectedIds.size}件を削除しました",
-                    showMessage = true
-                )
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        message = "${_selectedIds.size}件を削除しました",
+                        showMessage = true
+                    )
+                }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = e.message ?: "削除に失敗しました",
-                    showError = true
-                )
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        error = e.message ?: "削除に失敗しました",
+                        showError = true
+                    )
+                }
             }
         }
     }
@@ -99,10 +112,14 @@ class MainViewModel @Inject constructor(
 }
 
 // UI状態を保持するデータクラス
+/**
+ * UI状態を保持するデータクラス
+ */
 data class MainUiState(
     val selectedCount: Int = 0,
     val message: String = "",
-    val error: String = "",
     val showMessage: Boolean = false,
-    val showError: Boolean = false
+    val error: String = "",
+    val showError: Boolean = false,
+    val isLoading: Boolean = false
 )
