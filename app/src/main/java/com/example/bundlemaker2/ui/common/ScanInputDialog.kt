@@ -40,35 +40,50 @@ class ScanInputDialog(
         val builder = AlertDialog.Builder(requireContext())
             .setView(view)
             .setCancelable(false)
-            .setPositiveButton(R.string.ok) { _, _ ->
-                val input = editText.text.toString().trim()
-                if (input.isNotEmpty()) {
-                    onInput(input, false)
-                } else {
-                    showToast("入力が空です。シリアル番号を入力してください。")
-                    // ダイアログを閉じないようにする
-                    try {
-                        (dialog as? AlertDialog)?.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = true
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-            }
+            .setPositiveButton(R.string.ok, null) // We'll set the click listener later after dialog creation
         
         // 入力完了ボタンを追加
         if (showFinishButton) {
-            builder.setNeutralButton(R.string.finish_input) { _, _ ->
-                onFinish?.invoke()
-            }
+            builder.setNeutralButton(R.string.finish_input, null)
         }
         
         if (showCancel) {
-            builder.setNegativeButton(R.string.cancel) { _, _ ->
-                onInput("", true)
+            builder.setNegativeButton(R.string.cancel, null)
+        }
+        
+        val dialog = builder.create()
+        
+        // ダイアログが表示された後にボタンのクリックリスナーを設定
+        dialog.setOnShowListener {
+            val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positiveButton.setOnClickListener {
+                val input = editText.text.toString().trim()
+                if (input.isNotEmpty()) {
+                    onInput(input, false)
+                    // 入力をクリアして次の入力に備える
+                    editText.text.clear()
+                } else {
+                    showToast("シリアル番号を入力してください")
+                }
+            }
+            
+            if (showFinishButton) {
+                val finishButton = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+                finishButton.setOnClickListener {
+                    onFinish?.invoke()
+                }
+            }
+            
+            if (showCancel) {
+                val negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                negativeButton.setOnClickListener {
+                    onInput("", true)
+                    dialog.dismiss()
+                }
             }
         }
         
-        return builder.create()
+        return dialog
     }
 
     override fun onDestroyView() {

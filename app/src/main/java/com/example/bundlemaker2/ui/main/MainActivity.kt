@@ -291,21 +291,21 @@ class MainActivity : AppCompatActivity() {
                     showNextSerialInputDialog()
                 }
             },
-            showCancel = hasEntries,
+            showCancel = true, // 常にキャンセルボタンを表示
             showFinishButton = hasEntries,
             onCancel = {
-                // キャンセルボタンが押された場合の処理（従来通り）
-                if (serialEntries.any { it.first == currentMfgId }) {
-                    showToast("シリアル番号の入力を終了します")
+                // キャンセルボタンが押された場合、この製造番号で入力したシリアル番号をすべて削除
+                val beforeCount = serialEntries.count { it.first == currentMfgId }
+                serialEntries.removeAll { it.first == currentMfgId }
+                val removedCount = beforeCount
+                if (removedCount > 0) {
+                    showToast("${currentMfgId}のシリアル番号${removedCount}件をキャンセルしました")
                 } else {
-                    currentMfgId = ""
-                    isWaitingForSerials = false
+                    showToast("キャンセルしました")
                 }
-                if (serialEntries.isNotEmpty()) {
-                    navigateToConfirm()
-                } else {
-                    showToast("シリアル番号が入力されていません")
-                }
+                // 状態をリセット
+                currentMfgId = ""
+                isWaitingForSerials = false
             },
             onFinish = {
                 // 入力完了ボタンが押された場合
@@ -313,7 +313,9 @@ class MainActivity : AppCompatActivity() {
                     showToast("シリアル番号の入力を終了します")
                     navigateToConfirm()
                 } else {
-                    showToast("シリアル番号が入力されていません")
+                    // シリアル番号が1つも入力されていない場合はエラーメッセージを表示
+                    // ただし、ダイアログは閉じない
+                    showToast("シリアル番号が入力されていません。シリアル番号を入力するか、「キャンセル」で入力を終了してください。")
                 }
             }
         )
