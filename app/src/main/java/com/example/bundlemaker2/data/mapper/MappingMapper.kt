@@ -4,16 +4,16 @@ import com.example.bundlemaker2.data.local.entity.MfgSerialMappingEntity
 import com.example.bundlemaker2.domain.model.MappingStatus
 import com.example.bundlemaker2.domain.model.MfgSerialMapping
 import java.time.Instant
+import javax.inject.Inject
 
-object MappingMapper {
+class MappingMapper @Inject constructor() {
     fun toEntity(domain: MfgSerialMapping): MfgSerialMappingEntity {
         return MfgSerialMappingEntity(
             id = domain.id,
             mfgId = domain.mfgId,
             serialId = domain.serialId,
-            scannedAt = domain.scannedAt,
             status = domain.status.name,
-            errorCode = domain.errorCode
+            synced = domain.synced
         )
     }
 
@@ -22,13 +22,9 @@ object MappingMapper {
             id = entity.id,
             mfgId = entity.mfgId,
             serialId = entity.serialId,
-            scannedAt = entity.scannedAt,
             status = MappingStatus.valueOf(entity.status),
-            errorCode = entity.errorCode
+            scannedAt = Instant.now(), // or use a default value from the entity if available
+            synced = entity.synced
         )
-    }
-
-    fun toDomainList(entities: List<MfgSerialMappingEntity>): List<MfgSerialMapping> {
-        return entities.map { toDomain(it) }
     }
 }

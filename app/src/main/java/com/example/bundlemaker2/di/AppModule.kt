@@ -1,8 +1,10 @@
 package com.example.bundlemaker2.di
 
 import android.content.Context
+import androidx.room.Room
 import com.example.bundlemaker2.data.database.AppDatabase
 import com.example.bundlemaker2.data.dao.MfgSerialDao
+import com.example.bundlemaker2.data.mapper.MappingMapper
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,11 +18,19 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
-        return AppDatabase.getDatabase(context)
+        return Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "bundle_maker.db"
+        ).build()
     }
 
     @Provides
     fun provideMfgSerialDao(database: AppDatabase): MfgSerialDao {
         return database.mfgSerialDao()
     }
+
+    @Provides
+    @Singleton
+    fun provideMappingMapper(): MappingMapper = MappingMapper()
 }

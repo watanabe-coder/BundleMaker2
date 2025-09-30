@@ -2,7 +2,8 @@ package com.example.bundlemaker2.di
 
 import com.example.bundlemaker2.data.dao.MfgSerialDao
 import com.example.bundlemaker2.data.mapper.MappingMapper
-import com.example.bundlemaker2.data.repository.MfgSerialRepository
+import com.example.bundlemaker2.data.repository.MfgSerialRepositoryImpl
+import com.example.bundlemaker2.domain.repository.MfgSerialRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,18 +16,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
-
     @Provides
     @Singleton
     fun provideMfgSerialRepository(
-        mfgSerialDao: MfgSerialDao
+        mfgSerialDao: MfgSerialDao,
+        mapper: MappingMapper
     ): MfgSerialRepository {
-        return MfgSerialRepository(mfgSerialDao)
-    }
-
-    @Provides
-    @Singleton
-    fun provideMappingMapper(): MappingMapper {
-        return MappingMapper
+        return MfgSerialRepositoryImpl(mfgSerialDao, mapper)
     }
 }

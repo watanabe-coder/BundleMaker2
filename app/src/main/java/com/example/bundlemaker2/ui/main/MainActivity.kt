@@ -3,6 +3,7 @@ package com.example.bundlemaker2.ui.main
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -14,8 +15,9 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.bundlemaker2.R
-import com.example.bundlemaker2.data.database.AppDatabase
-import com.example.bundlemaker2.data.repository.MfgSerialRepository
+import com.example.bundlemaker2.domain.repository.MfgSerialRepository
+import com.example.bundlemaker2.domain.model.MappingStatus
+import com.example.bundlemaker2.domain.model.MfgSerialMapping
 import com.example.bundlemaker2.ui.common.ScanInputDialog
 import com.example.bundlemaker2.ui.confirm.ConfirmActivity
 import com.example.bundlemaker2.ui.login.LoginActivity
@@ -24,17 +26,26 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.*
+
 
 import com.example.bundlemaker2.util.Constants.EXTRA_CONFIRMED_SERIAL_IDS
 import com.example.bundlemaker2.util.Constants.EXTRA_MFG_ID
 import com.example.bundlemaker2.util.Constants.EXTRA_SERIAL_IDS
+import dagger.hilt.android.AndroidEntryPoint
+import java.time.Instant
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private var currentMfgId: String = ""
     // Track each serial with its manufacturing number
     private val serialEntries = mutableListOf<Pair<String, String>>() // Pair of (mfgId, serialId)
     private var isBundleMode = false
     private var isWaitingForSerials = false
+
+    @Inject
+    lateinit var mfgSerialRepository: MfgSerialRepository
 
     private fun handleConfirmedSerials(confirmedSerials: ArrayList<String>?) {
         confirmedSerials?.let {
@@ -52,35 +63,58 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val database by lazy { AppDatabase.getDatabase(this) }
-    private val mfgSerialDao by lazy { database.mfgSerialDao() }
-    private val mfgSerialRepository by lazy { MfgSerialRepository(mfgSerialDao) }
-
     private fun saveConfirmedSerials(serials: List<String>) {
         if (serials.isEmpty()) return
-        
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Group serials by their manufacturing number
-                val serialsByMfgId = serialEntries.groupBy({ it.first }, { it.second })
+                // 型パラメータを明示的に指定
+                val serialsByMfgId = serialEntries.groupBy(
+                    keySelector = { it.first },
+                    valueTransform = { it.second }
+                )
                 var totalSaved = 0
-                
-                // Save each group with its manufacturing number
+
+                // 各製造番号ごとの処理
                 for ((mfgId, serialsForMfg) in serialsByMfgId) {
-                    val success = mfgSerialRepository.saveMfgSerials(mfgId, serialsForMfg)
-                    if (success) {
-                        totalSaved += serialsForMfg.size
-                    } else {
+                    val currentTime = Date()
+                    val dataMappings = serialsForMfg.map { serialId ->
+                        MfgSerialMapping(
+                            mfgId = mfgId,
+                            serialId = serialId,
+                            scannedAt = currentTime.toInstant(),
+                            status = MappingStatus.CONFIRMED
+                        )
+                    }
+
+                    // データモデルに変換
+                    //val dataMappings = domainMappings.map { mapping ->
+                    //    mapper.toEntity(mapping)
+                    //}
+
+                    try {
+                        mfgSerialRepository.insertAll(dataMappings)
+                        totalSaved += dataMappings.size
+                        Log.d("SaveConfirmedSerials", "Saved ${dataMappings.size} serials for mfgId: $mfgId")
+                    } catch (e: Exception) {
+                        Log.e("SaveConfirmedSerials", "Error saving serials for mfgId $mfgId", e)
                         withContext(Dispatchers.Main) {
-                            showToast("一部のシリアル番号の保存に失敗しました")
+                            showToast("${mfgId}のシリアル番号の保存中にエラーが発生しました")
                         }
                         return@launch
                     }
                 }
-                
+
                 withContext(Dispatchers.Main) {
                     showToast("${totalSaved}件のシリアル番号を保存しました")
+                    // 状態をリセット
+                    serialEntries.clear()
+                    if (isBundleMode) {
+                        currentMfgId = ""
+                        isWaitingForSerials = false
+                    }
                 }
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
@@ -130,8 +164,13 @@ class MainActivity : AppCompatActivity() {
                     // シリアル番号入力に進む
                     showNextSerialInputDialog()
                 },
-                showCancel = false,
-                onCancel = null
+                showCancel = true,
+                onCancel = {
+                    // キャンセルされたらメイン画面に戻る
+                    currentMfgId = ""
+                    isWaitingForSerials = false
+                    showToast("製造番号の入力をキャンセルしました")
+                }
             )
         }
 

@@ -10,15 +10,14 @@ import java.time.Instant
     indices = [Index(value = ["mfgId", "serialId"], unique = true)]
 )
 data class MfgSerialMapping(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0L,
+    val id: Long = 0,
     val mfgId: String,
     val serialId: String,
-    val scannedAt: Instant,
     val status: MappingStatus,
-    val errorCode: String? = null
+    val scannedAt: Instant = Instant.now(),
+    val synced: Boolean = false
 )
 
 enum class MappingStatus {
-    DRAFT, READY, SENT, ERROR
+    DRAFT,CONFIRMED, READY, SENT, ERROR
 }
