@@ -15,7 +15,9 @@ class ScanInputDialog(
     private val title: String,
     private val hint: String,
     private val showCancel: Boolean = false,
-    private val onInput: (String, Boolean) -> Unit
+    private val showFinishButton: Boolean = false,
+    private val onInput: (String, Boolean) -> Unit,
+    private val onFinish: (() -> Unit)? = null
 ) : DialogFragment() {
 
     private lateinit var editText: EditText
@@ -42,12 +44,23 @@ class ScanInputDialog(
                 val input = editText.text.toString().trim()
                 if (input.isNotEmpty()) {
                     onInput(input, false)
+                } else {
+                    showToast("入力が空です。シリアル番号を入力してください。")
+                    // ダイアログを閉じないようにする
+                    try {
+                        (dialog as? AlertDialog)?.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = true
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
-            .setNeutralButton(R.string.scan) { _, _ ->
-                // TODO: Implement barcode scanning
-                showToast("バーコードスキャンを開始します")
+        
+        // 入力完了ボタンを追加
+        if (showFinishButton) {
+            builder.setNeutralButton(R.string.finish_input) { _, _ ->
+                onFinish?.invoke()
             }
+        }
         
         if (showCancel) {
             builder.setNegativeButton(R.string.cancel) { _, _ ->
@@ -66,6 +79,13 @@ class ScanInputDialog(
         context?.let {
             Toast.makeText(it, message, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // ダイアログが表示されたら自動でキーボードを表示
+        editText.requestFocus()
+        dialog?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
     }
 
     companion object {

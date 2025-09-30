@@ -276,6 +276,9 @@ class MainActivity : AppCompatActivity() {
             return
         }
         
+        // すでに1つ以上のシリアル番号が入力されている場合は「入力完了」ボタンを表示
+        val hasEntries = serialEntries.any { it.first == currentMfgId }
+        
         showScanInputDialog(
             title = getString(R.string.input_serial_number),
             hint = getString(R.string.input_serial_number_hint),
@@ -284,21 +287,30 @@ class MainActivity : AppCompatActivity() {
                     // 現在の製造番号とシリアル番号のペアを追加
                     serialEntries.add(currentMfgId to input)
                     showToast("シリアル番号を追加しました: $input (製造番号: $currentMfgId)")
-                    // 次のシリアル番号入力に進む
+                    // 次のシリアル番号入力に進む（入力完了ボタン付き）
                     showNextSerialInputDialog()
                 }
             },
-            showCancel = serialEntries.isNotEmpty(),
+            showCancel = hasEntries,
+            showFinishButton = hasEntries,
             onCancel = {
-                // シリアル番号入力キャンセル時の処理
+                // キャンセルボタンが押された場合の処理（従来通り）
                 if (serialEntries.any { it.first == currentMfgId }) {
                     showToast("シリアル番号の入力を終了します")
                 } else {
-                    // この製造番号で1つもシリアル番号が入力されていない場合は製造番号をリセット
                     currentMfgId = ""
                     isWaitingForSerials = false
                 }
                 if (serialEntries.isNotEmpty()) {
+                    navigateToConfirm()
+                } else {
+                    showToast("シリアル番号が入力されていません")
+                }
+            },
+            onFinish = {
+                // 入力完了ボタンが押された場合
+                if (serialEntries.any { it.first == currentMfgId }) {
+                    showToast("シリアル番号の入力を終了します")
                     navigateToConfirm()
                 } else {
                     showToast("シリアル番号が入力されていません")
@@ -312,15 +324,24 @@ class MainActivity : AppCompatActivity() {
         hint: String,
         onInput: (String) -> Unit,
         showCancel: Boolean = false,
-        onCancel: (() -> Unit)? = null
+        showFinishButton: Boolean = false,
+        onCancel: (() -> Unit)? = null,
+        onFinish: (() -> Unit)? = null
     ) {
-        val dialog = ScanInputDialog(title, hint, showCancel) { input, isCancelled ->
-            if (isCancelled) {
-                onCancel?.invoke()
-            } else {
-                onInput(input)
-            }
-        }
+        val dialog = ScanInputDialog(
+            title = title,
+            hint = hint,
+            showCancel = showCancel,
+            showFinishButton = showFinishButton,
+            onInput = { input, isCancelled ->
+                if (isCancelled) {
+                    onCancel?.invoke()
+                } else {
+                    onInput(input)
+                }
+            },
+            onFinish = onFinish
+        )
         dialog.show(supportFragmentManager, ScanInputDialog.Companion.TAG)
     }
 
