@@ -10,5 +10,6 @@ data class MfgSerialMappingEntity(
     val mfgId: String,
     val serialId: String,
     val status: String,
+    val scannedAt: Long = System.currentTimeMillis(),
     val synced: Boolean = false
 )

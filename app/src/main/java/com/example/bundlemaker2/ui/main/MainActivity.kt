@@ -20,6 +20,7 @@ import com.example.bundlemaker2.domain.model.MappingStatus
 import com.example.bundlemaker2.domain.model.MfgSerialMapping
 import com.example.bundlemaker2.ui.common.ScanInputDialog
 import com.example.bundlemaker2.ui.confirm.ConfirmActivity
+import com.example.bundlemaker2.ui.db.DbRecordsActivity
 import com.example.bundlemaker2.ui.login.LoginActivity
 import com.example.bundlemaker2.util.EmployeeHelper
 import kotlinx.coroutines.CoroutineScope
@@ -386,6 +387,12 @@ class MainActivity : AppCompatActivity() {
                 R.id.action_settings -> {
                     // 設定画面への遷移処理（未実装）
                     showToast("設定画面を表示します")
+                    true
+                }
+                R.id.action_view_db -> {
+                    // データベースレコード画面に遷移
+                    val intent = Intent(this@MainActivity, DbRecordsActivity::class.java)
+                    startActivity(intent)
                     true
                 }
                 R.id.action_logout -> {

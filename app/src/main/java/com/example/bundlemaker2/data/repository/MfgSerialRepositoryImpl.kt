@@ -59,7 +59,12 @@ class MfgSerialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getUnsyncedMappings(): Result<List<MfgSerialMapping>> = runCatching {
-        dao.getUnsyncedMappings().map { mapper.toDomain(it) }
+        val entities = dao.getUnsyncedMappings()
+        entities.map { mapper.toDomain(it) }
+    }
+    
+    override suspend fun getAllMappings(): List<MfgSerialMapping> {
+        return dao.getAll().map { mapper.toDomain(it) }
     }
 
     override suspend fun insertAll(mappings: List<MfgSerialMapping>): Result<Unit> = runCatching {
@@ -68,9 +73,15 @@ class MfgSerialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun syncMappings(token: String, mfgId: String): Result<Unit> = runCatching {
-        // 同期処理の実装
+        // 未同期のマッピングを取得
         val unsynced = dao.getUnsyncedMappings()
-        // 同期処理...
-        dao.markAsSynced(unsynced.map { it.id })
+
+        if (unsynced.isNotEmpty()) {
+            // 同期処理を実装...
+
+            // 同期が完了したらマーク
+            val ids = unsynced.map { it.id }
+            dao.markAsSynced(ids)
+        }
     }
 }

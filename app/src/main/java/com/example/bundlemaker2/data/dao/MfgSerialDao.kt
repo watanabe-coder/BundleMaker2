@@ -38,4 +38,7 @@ interface MfgSerialDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(mappings: List<MfgSerialMappingEntity>)
+    
+    @Query("SELECT * FROM mfg_serial_mappings ORDER BY scannedAt DESC")
+    suspend fun getAll(): List<MfgSerialMappingEntity>
 }
