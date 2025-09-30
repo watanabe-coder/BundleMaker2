@@ -48,83 +48,67 @@ class MainActivity : AppCompatActivity() {
     lateinit var mfgSerialRepository: MfgSerialRepository
 
     private fun handleConfirmedSerials(confirmedSerials: ArrayList<String>?) {
-        confirmedSerials?.let {
-            if (it.isNotEmpty()) {
-                showToast("${it.size}件のシリアル番号を確定しました")
+        confirmedSerials?.let { serials ->
+            if (serials.isNotEmpty()) {
+                showToast("${serials.size}件のシリアル番号を確定しました")
+                
                 // データベースに保存 (各シリアル番号は既に正しい製造番号と紐づいている)
-                saveConfirmedSerials(it)
-                // 状態をリセット
-                serialEntries.clear()
-                if (isBundleMode) {
-                    currentMfgId = ""
-                    isWaitingForSerials = false
-                }
-                // メイン画面に遷移するためにアクティビティを再起動
-                val intent = Intent(this, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                startActivity(intent)
-                finish()
-            }
-        }
-    }
-
-    private fun saveConfirmedSerials(serials: List<String>) {
-        if (serials.isEmpty()) return
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                // 型パラメータを明示的に指定
-                val serialsByMfgId = serialEntries.groupBy(
-                    keySelector = { it.first },
-                    valueTransform = { it.second }
-                )
-                var totalSaved = 0
-
-                // 各製造番号ごとの処理
-                for ((mfgId, serialsForMfg) in serialsByMfgId) {
-                    val currentTime = Date()
-                    val dataMappings = serialsForMfg.map { serialId ->
-                        MfgSerialMapping(
-                            mfgId = mfgId,
-                            serialId = serialId,
-                            scannedAt = currentTime.toInstant(),
-                            status = MappingStatus.CONFIRMED
-                        )
-                    }
-
-                    // データモデルに変換
-                    //val dataMappings = domainMappings.map { mapping ->
-                    //    mapper.toEntity(mapping)
-                    //}
-
+                CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        mfgSerialRepository.insertAll(dataMappings)
-                        totalSaved += dataMappings.size
-                        Log.d("SaveConfirmedSerials", "Saved ${dataMappings.size} serials for mfgId: $mfgId")
-                    } catch (e: Exception) {
-                        Log.e("SaveConfirmedSerials", "Error saving serials for mfgId $mfgId", e)
-                        withContext(Dispatchers.Main) {
-                            showToast("${mfgId}のシリアル番号の保存中にエラーが発生しました")
+                        // 型パラメータを明示的に指定
+                        val serialsByMfgId = serialEntries.groupBy(
+                            keySelector = { it.first },
+                            valueTransform = { it.second }
+                        )
+                        var totalSaved = 0
+
+                        // 各製造番号ごとの処理
+                        for ((mfgId, serialsForMfg) in serialsByMfgId) {
+                            val currentTime = Date()
+                            val dataMappings = serialsForMfg.map { serialId ->
+                                MfgSerialMapping(
+                                    mfgId = mfgId,
+                                    serialId = serialId,
+                                    scannedAt = currentTime.toInstant(),
+                                    status = MappingStatus.CONFIRMED
+                                )
+                            }
+
+                            try {
+                                mfgSerialRepository.insertAll(dataMappings)
+                                totalSaved += dataMappings.size
+                                Log.d("SaveConfirmedSerials", "Saved ${dataMappings.size} serials for mfgId: $mfgId")
+                            } catch (e: Exception) {
+                                Log.e("SaveConfirmedSerials", "Error saving serials for mfgId $mfgId", e)
+                                withContext(Dispatchers.Main) {
+                                    showToast("${mfgId}のシリアル番号の保存中にエラーが発生しました")
+                                }
+                                return@launch
+                            }
                         }
-                        return@launch
-                    }
-                }
 
-                withContext(Dispatchers.Main) {
-                    showToast("${totalSaved}件のシリアル番号を保存しました")
-                    // 状態をリセット
-                    serialEntries.clear()
-                    if (isBundleMode) {
-                        currentMfgId = ""
-                        isWaitingForSerials = false
+                        withContext(Dispatchers.Main) {
+                            showToast("${totalSaved}件のシリアル番号を保存しました")
+                            // 状態をリセット
+                            serialEntries.clear()
+                            if (isBundleMode) {
+                                currentMfgId = ""
+                                isWaitingForSerials = false
+                            }
+                            
+                            // メイン画面に遷移
+                            val intent = Intent(this@MainActivity, MainActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            startActivity(intent)
+                            finish()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        withContext(Dispatchers.Main) {
+                            showToast("エラーが発生しました: ${e.message}")
+                        }
                     }
-                }
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-                withContext(Dispatchers.Main) {
-                    showToast("エラーが発生しました: ${e.message}")
                 }
             }
         }
