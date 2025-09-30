@@ -48,31 +48,14 @@
 ## 5. API仕様
 
 ### エンドポイント
-`POST /api/v1/mappings/bulk`
+
+
 
 ### リクエスト
-```json
-{
-  "requestId": "uuid",
-  "deviceId": "device-id",
-  "mfgId": "MFG-001",
-  "items": [
-    {"serialId":"SER-001","scannedAt":"2025-01-01T00:00:00Z"}
-  ]
-}
-```
+
 
 ### レスポンス
-```json
-{
-  "ok": true,
-  "mfgId": "MFG-001",
-  "accepted": 1,
-  "rejected": [
-    {"serialId":"SER-002","code":"DUPLICATE","message":"already exists"}
-  ]
-}
-```
+
 
 ## 6. 基本機能
 
