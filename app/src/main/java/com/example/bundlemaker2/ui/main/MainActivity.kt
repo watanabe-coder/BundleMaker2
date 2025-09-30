@@ -59,6 +59,12 @@ class MainActivity : AppCompatActivity() {
                     currentMfgId = ""
                     isWaitingForSerials = false
                 }
+                // メイン画面に遷移するためにアクティビティを再起動
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(intent)
+                finish()
             }
         }
     }
