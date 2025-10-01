@@ -19,5 +19,5 @@ data class MfgSerialMapping(
 )
 
 enum class MappingStatus {
-    DRAFT,CONFIRMED, READY, SENT, ERROR
+    DRAFT,CONFIRMED, READY, SENT, ERROR, SYNCED, FAILED
 }

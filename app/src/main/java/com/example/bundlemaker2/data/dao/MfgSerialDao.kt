@@ -41,4 +41,13 @@ interface MfgSerialDao {
     
     @Query("SELECT * FROM mfg_serial_mappings ORDER BY scannedAt DESC")
     suspend fun getAll(): List<MfgSerialMappingEntity>
+
+    @Query("SELECT * FROM mfg_serial_mappings WHERE status = :status")
+    suspend fun getByStatus(status: String): List<MfgSerialMappingEntity>
+
+    @Query("UPDATE mfg_serial_mappings SET status = :status WHERE id IN (:ids)")
+    suspend fun updateStatus(ids: List<Long>, status: String)
+
+    @Query("DELETE FROM mfg_serial_mappings WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Long>)
 }

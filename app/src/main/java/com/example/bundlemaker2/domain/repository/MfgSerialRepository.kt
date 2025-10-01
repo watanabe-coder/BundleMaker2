@@ -22,6 +22,9 @@ interface MfgSerialRepository {
 
     // 同期関連（必要に応じて別のRepositoryに分けても良い）
     suspend fun syncMappings(token: String, mfgId: String): Result<Unit>
+    suspend fun getReadyToSync(): List<MfgSerialMapping>
+    suspend fun updateStatus(ids: List<Long>, status: MappingStatus)
+    suspend fun deleteSynced(ids: List<Long>)
 
     // 全マッピングを取得
     suspend fun getAllMappings(): List<MfgSerialMapping>

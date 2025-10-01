@@ -84,4 +84,20 @@ class MfgSerialRepositoryImpl @Inject constructor(
             dao.markAsSynced(ids)
         }
     }
+
+    override suspend fun getReadyToSync(): List<MfgSerialMapping> {
+        return dao.getByStatus(MappingStatus.READY.name).map { mapper.toDomain(it) }
+    }
+
+    override suspend fun updateStatus(ids: List<Long>, status: MappingStatus) {
+        if (ids.isNotEmpty()) {
+            dao.updateStatus(ids, status.name)
+        }
+    }
+
+    override suspend fun deleteSynced(ids: List<Long>) {
+        if (ids.isNotEmpty()) {
+            dao.deleteByIds(ids)
+        }
+    }
 }
