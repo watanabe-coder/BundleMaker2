@@ -1,6 +1,7 @@
 package com.example.bundlemaker2.ui.main
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -41,6 +42,7 @@ import java.util.*
 import com.example.bundlemaker2.util.Constants.EXTRA_CONFIRMED_SERIAL_IDS
 import com.example.bundlemaker2.util.Constants.EXTRA_MFG_ID
 import com.example.bundlemaker2.util.Constants.EXTRA_SERIAL_IDS
+import com.example.bundlemaker2.utils.LogUtils
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.Instant
 import javax.inject.Inject
@@ -52,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     // Track each serial with its manufacturing number
     private val serialEntries = mutableListOf<Pair<String, String>>() // Pair of (mfgId, serialId)
     private val syncViewModel: SyncViewModel by viewModels()
+    private val viewModel: MainViewModel by viewModels()
     private var isBundleMode = false
     private var isWaitingForSerials = false
 
@@ -440,20 +443,31 @@ class MainActivity : AppCompatActivity() {
     // 同期状態を監視
     private fun observeSyncState() {
         lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 syncViewModel.syncState.collect { state ->
                     when (state) {
-                        is SyncState.Loading -> {
-                            // ローディング表示
-                            showToast("同期を開始しています...")
-                        }
                         is SyncState.Success -> {
-                            showToast(state.message)
-                            // 必要に応じてUIを更新
+                            showLoading(false)
+                            val logMessage = "同期成功: ${state.message}, " +
+                                    "処理件数: ${state.processedCount}, " +
+                                    "成功: ${state.successCount}, " +
+                                    "失敗: ${state.failedCount}"
+                            LogUtils.logSyncEvent(this@MainActivity, logMessage)
+                            showToast("同期が完了しました")
                             refreshData()
                         }
                         is SyncState.Error -> {
-                            showToast("同期エラー: ${state.message}")
+                            showLoading(false)
+                            val logMessage = "同期エラー: ${state.message}"
+                            LogUtils.logSyncEvent(this@MainActivity, logMessage)
+                            showToast(logMessage)
+                        }
+                        is SyncState.Loading -> {
+                            showLoading(true)
+                            updateProgress(state.current, state.total)
+                            if (state.current == 1) {
+                                LogUtils.logSyncEvent(this@MainActivity, "同期を開始します...")
+                            }
                         }
                         else -> {
                             showLoading(false)
@@ -486,7 +500,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
         return when (item.itemId) {
             R.id.refreshButton -> {
-                syncViewModel.syncMfgSerials()
+                syncViewModel.syncState
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -527,5 +541,18 @@ class MainActivity : AppCompatActivity() {
         }
         // メニューを表示
         popupMenu.show()
+    }
+
+    private fun showLogs() {
+        val logs = LogUtils.readLogs(this)
+        AlertDialog.Builder(this)
+            .setTitle("同期ログ")
+            .setMessage(if (logs.isNotEmpty()) logs else "ログがありません")
+            .setPositiveButton("閉じる", null)
+            .setNeutralButton("クリア") { _, _ ->
+                LogUtils.clearLogs(this)
+                showToast("ログをクリアしました")
+            }
+            .show()
     }
 }

@@ -12,39 +12,61 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.example.bundlemaker2.domain.usecase.Result
 
+sealed class SyncProgress {
+    data class Update(val current: Int, val total: Int) : SyncProgress()
+    data class Success(
+        val processedCount: Int,
+        val successCount: Int,
+        val failedCount: Int
+    ) : SyncProgress()
+    data class Error(val message: String) : SyncProgress()
+}
+
 @HiltViewModel
 class SyncViewModel @Inject constructor(
     private val syncUseCase: SyncMfgSerialsUseCase
 ) : ViewModel() {
-
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
 
     private var syncJob: Job? = null
 
-    fun syncMfgSerials() {
+    fun syncData() {
         if (syncJob?.isActive == true) return
 
         syncJob = viewModelScope.launch {
-            _syncState.value = SyncState.Loading
+            try {
+                _syncState.value = SyncState.Loading(current = 0, total = 0)
 
-            val result = syncUseCase { current, total ->
-                _syncState.value = SyncState.Progress(current, total)
-            }
+                // 進捗コールバックを定義
+                val onProgress: (Int, Int) -> Unit = { current, total ->
+                    _syncState.value = SyncState.Loading(current, total)
+                }
 
-            when (result) {
-                is Result.Success -> {
-                    _syncState.value = SyncState.Success(result.data.message)
+                // 同期を実行
+                val result = syncUseCase(onProgress)
+
+                when (result) {
+                    is Result.Success -> {
+                        _syncState.value = SyncState.Success(
+                            message = result.data.message,
+                            processedCount = result.data.successCount + result.data.failureCount,
+                            successCount = result.data.successCount,
+                            failedCount = result.data.failureCount
+                        )
+                    }
+                    is Result.Error -> {
+                        _syncState.value = SyncState.Error(result.message)
+                    }
                 }
-                is Result.Error -> {
-                    _syncState.value = SyncState.Error(result.message)
-                }
+            } catch (e: Exception) {
+                _syncState.value = SyncState.Error("同期に失敗しました: ${e.message}")
             }
         }
     }
 
     fun retrySync() {
-        syncMfgSerials()
+        syncData()
     }
 
     fun resetState() {

@@ -12,10 +12,19 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed class SyncState {
-    object Idle : SyncState()         // 初期状態
-    object Loading : SyncState()      // ローディング中
-    data class Success(val message: String) : SyncState()  // 成功
-    data class Error(val message: String) : SyncState()    // エラー
-    data class Progress(val current: Int, val total: Int) : SyncState() // 進捗状況
+    object Idle : SyncState()
+    data class Loading(
+        val current: Int = 0,
+        val total: Int = 0
+    ) : SyncState()
+
+    data class Success(
+        val message: String = "",
+        val processedCount: Int = 0,
+        val successCount: Int = 0,
+        val failedCount: Int = 0
+    ) : SyncState()
+
+    data class Error(val message: String) : SyncState()
 }
 
