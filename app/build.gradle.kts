@@ -96,6 +96,9 @@ dependencies {
     //junit
     implementation(libs.junit)
 
+    //WorkManager
+    implementation(libs.workmanager)
+
     // Test dependencies
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.test:core:1.5.0")

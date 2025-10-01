@@ -53,6 +53,7 @@ class DbRecordsActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
+        supportActionBar?.title = "登録済みレコード一覧"
     }
 
     private fun setupRecyclerView() {
