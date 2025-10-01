@@ -40,6 +40,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private var currentMfgId: String = ""
+    private lateinit var workerInfoText: TextView
     // Track each serial with its manufacturing number
     private val serialEntries = mutableListOf<Pair<String, String>>() // Pair of (mfgId, serialId)
     private var isBundleMode = false
@@ -48,6 +49,16 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var mfgSerialRepository: MfgSerialRepository
 
+    private fun updateWorkerInfo(userName: String) {
+        workerInfoText.text = getString(R.string.worker_info, userName)
+    }
+    
+    private fun showLoginScreen() {
+        val intent = Intent(this, LoginActivity::class.java)
+        startActivity(intent)
+        finish()
+    }
+    
     private fun handleConfirmedSerials(confirmedSerials: ArrayList<String>?) {
         confirmedSerials?.let { serials ->
             if (serials.isNotEmpty()) {
@@ -119,14 +130,24 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        
+        workerInfoText = findViewById(R.id.workerInfoText)
+        
+        // Check if user is logged in
+        val sharedPref = getSharedPreferences("login_prefs", MODE_PRIVATE)
+        val username = sharedPref.getString("username", "")
+        if (username.isNullOrEmpty()) {
+            // If not logged in, start LoginActivity
+            showLoginScreen()
+            return
+        }
 
         // Initialize EmployeeHelper
         EmployeeHelper.initialize(applicationContext)
         
-        val userCode = intent.getStringExtra("EXTRA_USER_CODE") ?: ""
-        val userName = EmployeeHelper.getUserName(userCode)
-        val workerTextView = findViewById<TextView>(R.id.workerInfoText)
-        workerTextView.text = "作業者：$userName"
+        // Get user name from EmployeeHelper
+        val userName = EmployeeHelper.getUserName(username)
+        updateWorkerInfo(userName)
 
         // Set up edge-to-edge display
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { _, insets ->

@@ -29,6 +29,13 @@ class LoginActivity : AppCompatActivity() {
 
             if (isUserCodeValid(userCode)) {
                 errorText.visibility = TextView.GONE
+                // Save username to SharedPreferences
+                val sharedPref = getSharedPreferences("login_prefs", MODE_PRIVATE)
+                with(sharedPref.edit()) {
+                    putString("username", userCode)
+                    apply()
+                }
+                
                 Toast.makeText(this, "ログイン成功", Toast.LENGTH_SHORT).show()
                 val intent = Intent(this, MainActivity::class.java).apply {
                     putExtra("EXTRA_USER_CODE", userCode)

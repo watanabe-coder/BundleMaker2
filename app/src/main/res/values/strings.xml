@@ -4,7 +4,7 @@
     <!-- Main Activity Strings -->
     <string name="menu">Menu</string>
     <string name="refresh">Refresh</string>
-    <string name="worker_info">作業者 : 〇〇 〇〇</string>
+    <string name="worker_info">作業者: %s</string>
     <string name="bundle_manufacturing_number">Bundle 製造番号</string>
     <string name="unit_serial_number">Unit シリアル番号</string>
     <string name="confirm">確認</string>
