@@ -5,10 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.bundlemaker2.domain.model.MappingStatus
 import com.example.bundlemaker2.domain.model.MfgSerialMapping
 import com.example.bundlemaker2.domain.repository.MfgSerialRepository
+import com.example.bundlemaker2.domain.usecase.SyncMfgSerialsUseCase
+import com.example.bundlemaker2.presentation.sync.SyncState
 import com.example.bundlemaker2.ui.main.MainUiState.Data
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import javax.inject.Inject

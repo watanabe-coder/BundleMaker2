@@ -69,7 +69,7 @@ dependencies {
     //Retrofit
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
-    
+
     //OkHttp
     implementation(libs.okhttp)
     implementation(libs.logging.interceptor)
@@ -89,7 +89,7 @@ dependencies {
 
     //ViewModel
     implementation(libs.lifecycle.viewmodel.ktx)
-    implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
 
     //Room
     implementation(libs.room.runtime)

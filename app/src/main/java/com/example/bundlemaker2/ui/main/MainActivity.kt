@@ -10,14 +10,23 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Observer
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.bundlemaker2.R
+import com.example.bundlemaker2.databinding.ActivityMainBinding
 import com.example.bundlemaker2.domain.repository.MfgSerialRepository
 import com.example.bundlemaker2.domain.model.MappingStatus
 import com.example.bundlemaker2.domain.model.MfgSerialMapping
+import com.example.bundlemaker2.presentation.sync.SyncViewModel
+import com.example.bundlemaker2.presentation.sync.SyncState
 import com.example.bundlemaker2.ui.common.ScanInputDialog
 import com.example.bundlemaker2.ui.confirm.ConfirmActivity
 import com.example.bundlemaker2.ui.db.DbRecordsActivity
@@ -39,11 +48,14 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private var currentMfgId: String = ""
-    private lateinit var workerInfoText: TextView
+    private val workerInfoText: TextView by lazy { binding.workerInfoText }
     // Track each serial with its manufacturing number
     private val serialEntries = mutableListOf<Pair<String, String>>() // Pair of (mfgId, serialId)
+    private val syncViewModel: SyncViewModel by viewModels()
     private var isBundleMode = false
     private var isWaitingForSerials = false
+
+    private lateinit var binding: ActivityMainBinding
 
     @Inject
     lateinit var mfgSerialRepository: MfgSerialRepository
@@ -133,8 +145,9 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
         
-        workerInfoText = findViewById(R.id.workerInfoText)
-        
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
         // Check if user is logged in
         val sharedPref = getSharedPreferences("login_prefs", MODE_PRIVATE)
         val username = sharedPref.getString("username", "")
@@ -232,6 +245,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupViews()
+        observeSyncState()
     }
 
     private fun setupViews() {
@@ -423,6 +437,62 @@ class MainActivity : AppCompatActivity() {
         dialog.show(supportFragmentManager, ScanInputDialog.Companion.TAG)
     }
 
+    // 同期状態を監視
+    private fun observeSyncState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                syncViewModel.syncState.collect { state ->
+                    when (state) {
+                        is SyncState.Loading -> {
+                            // ローディング表示
+                            showToast("同期を開始しています...")
+                        }
+                        is SyncState.Success -> {
+                            showToast(state.message)
+                            // 必要に応じてUIを更新
+                            refreshData()
+                        }
+                        is SyncState.Error -> {
+                            showToast("同期エラー: ${state.message}")
+                        }
+                        else -> {
+                            showLoading(false)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showLoading(show: Boolean) {
+        binding.apply {
+            progressBar.visibility = if (show) View.VISIBLE else View.GONE
+            // 必要に応じて他のUI要素の有効/無効を切り替え
+            refreshButton.isEnabled = !show
+        }
+    }
+
+    private fun updateProgress(current: Int, total: Int) {
+        binding.progressText.text = "$current / $total"
+    }
+    
+    // データを更新する関数
+    private fun refreshData() {
+        // ここにデータ更新のロジックを実装
+        showToast("データを更新しました")
+    }
+    
+    // メニューアイテム選択ハンドラ
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.refreshButton -> {
+                syncViewModel.syncMfgSerials()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     private fun showPopupMenu(anchorView: View) {
         val popupMenu = PopupMenu(this, anchorView)
         popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
@@ -455,7 +525,6 @@ class MainActivity : AppCompatActivity() {
                 else -> false
             }
         }
-
         // メニューを表示
         popupMenu.show()
     }
