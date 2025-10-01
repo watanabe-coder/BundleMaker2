@@ -5,21 +5,24 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object RetrofitClient {
-    private const val BASE_URL = "https://your-api-base-url.com/"
-
+@Singleton
+class RetrofitClient @Inject constructor(
+    private val loggingInterceptor: HttpLoggingInterceptor,
+    private val authInterceptor: AuthInterceptor
+) {
     private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        })
+        .addInterceptor(loggingInterceptor)
+        .addInterceptor(authInterceptor)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    internal val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+    val retrofit: Retrofit = Retrofit.Builder()
+        .baseUrl("https://192.168.5.72:5000/")
         .client(okHttpClient)
         .addConverterFactory(GsonConverterFactory.create())
         .build()

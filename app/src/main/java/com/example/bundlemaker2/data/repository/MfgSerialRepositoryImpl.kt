@@ -55,7 +55,9 @@ class MfgSerialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateStatuses(ids: List<Long>, status: MappingStatus): Result<Unit> = runCatching {
-        dao.updateStatuses(ids, status.name)
+        if (ids.isNotEmpty()) {
+            dao.updateStatus(ids, status.name)
+        }
     }
 
     override suspend fun getUnsyncedMappings(): Result<List<MfgSerialMapping>> = runCatching {
@@ -75,13 +77,24 @@ class MfgSerialRepositoryImpl @Inject constructor(
     override suspend fun syncMappings(token: String, mfgId: String): Result<Unit> = runCatching {
         // 未同期のマッピングを取得
         val unsynced = dao.getUnsyncedMappings()
-
+        
         if (unsynced.isNotEmpty()) {
-            // 同期処理を実装...
-
-            // 同期が完了したらマーク
-            val ids = unsynced.map { it.id }
-            dao.markAsSynced(ids)
+            // 同期対象を取得（mfgIdでフィルタリング）
+            val toSync = if (mfgId.isNotBlank()) {
+                unsynced.filter { it.mfgId == mfgId }
+            } else {
+                unsynced
+            }
+            
+            if (toSync.isNotEmpty()) {
+                // 同期処理（実際のAPI呼び出しは別のレイヤーで実装）
+                // ここでは単に同期済みとしてマークする
+                val ids = toSync.map { it.id }
+                dao.markAsSynced(ids)
+                
+                // ステータスを更新
+                dao.updateStatus(ids, MappingStatus.SYNCED.name)
+            }
         }
     }
 

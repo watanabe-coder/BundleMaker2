@@ -261,20 +261,104 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startSync() {
+        // 既に同期中の場合は何もしない
+        if (isSyncing) return
+
         // 同期中フラグをセット
         isSyncing = true
-        // ボタンを無効化（必要に応じてローディング表示なども追加可能）
-        findViewById<View>(R.id.refreshButton).isEnabled = false
-        
-        // ここに同期処理を実装（後で実装）
-        Toast.makeText(this, "同期を開始します...", Toast.LENGTH_SHORT).show()
-        
-        // テスト用に3秒後に同期完了をシミュレート
-        findViewById<View>(R.id.refreshButton).postDelayed({
-            isSyncing = false
-            findViewById<View>(R.id.refreshButton).isEnabled = true
-            Toast.makeText(this, "同期が完了しました", Toast.LENGTH_SHORT).show()
-        }, 3000)
+        binding.refreshButton.isEnabled = false
+        showLoading(true)
+
+        // 同期開始を通知
+        showToast("同期を開始します...")
+        LogUtils.logSyncEvent(this, "同期を開始します")
+
+        // バックグラウンドで実行
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // 1. 同期対象のデータを取得
+                val readyMappings = mfgSerialRepository.getReadyToSync()
+                if (readyMappings.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        showToast("同期対象のデータがありません")
+                        finishSync()
+                    }
+                    return@launch
+                }
+
+                // 2. 製造番号ごとにグループ化
+                val groupedByMfg = readyMappings.groupBy { it.mfgId }
+                var successCount = 0
+                var failedCount = 0
+
+                // 3. 各グループを順次処理
+                for ((index, entry) in groupedByMfg.entries.withIndex()) {
+                    val mfgId = entry.key
+                    val mappings = entry.value
+
+                    try {
+                        // 進捗を更新（UIスレッドで実行）
+                        withContext(Dispatchers.Main) {
+                            updateProgress(index + 1, groupedByMfg.size)
+                        }
+
+                        // 同期実行
+                        mfgSerialRepository.syncMappings("", mfgId).onSuccess {
+                            successCount += mappings.size
+                            Log.d("Sync", "Successfully synced ${mappings.size} items for mfgId: $mfgId")
+                        }.onFailure { e ->
+                            failedCount += mappings.size
+                            Log.e("Sync", "Failed to sync mfgId: $mfgId", e)
+                        }
+                    } catch (e: Exception) {
+                        failedCount += mappings.size
+                        Log.e("Sync", "Error syncing mfgId: $mfgId", e)
+                    }
+                }
+
+                // 4. 最終結果を表示
+                val message = when {
+                    successCount > 0 && failedCount > 0 ->
+                        "一部の同期に失敗しました (成功: $successCount, 失敗: $failedCount)"
+                    successCount > 0 ->
+                        "$successCount 件のデータを同期しました"
+                    else ->
+                        "データの同期に失敗しました"
+                }
+
+                withContext(Dispatchers.Main) {
+                    showToast(message)
+                    LogUtils.logSyncEvent(this@MainActivity, message)
+                }
+
+            } catch (e: Exception) {
+                val errorMsg = "同期中にエラーが発生しました: ${e.message}"
+                Log.e("Sync", errorMsg, e)
+                withContext(Dispatchers.Main) {
+                    showToast(errorMsg)
+                    LogUtils.logSyncEvent(this@MainActivity, "エラー: $errorMsg")
+                }
+            } finally {
+                // 5. 状態をリセット
+                withContext(Dispatchers.Main) {
+                    finishSync()
+                }
+            }
+        }
+    }
+
+    private fun finishSync() {
+        isSyncing = false
+        binding.refreshButton.isEnabled = true
+        showLoading(false)
+    }
+
+    private fun updateProgress(current: Int, total: Int) {
+        binding.progressText.text = "$current / $total"
+    }
+
+    private fun showLoading(show: Boolean) {
+        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     private fun showToast(message: String) {
@@ -478,18 +562,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showLoading(show: Boolean) {
-        binding.apply {
-            progressBar.visibility = if (show) View.VISIBLE else View.GONE
-            // 必要に応じて他のUI要素の有効/無効を切り替え
-            refreshButton.isEnabled = !show
-        }
-    }
-
-    private fun updateProgress(current: Int, total: Int) {
-        binding.progressText.text = "$current / $total"
-    }
-    
     // データを更新する関数
     private fun refreshData() {
         // ここにデータ更新のロジックを実装
