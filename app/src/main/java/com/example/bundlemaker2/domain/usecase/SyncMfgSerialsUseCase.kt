@@ -30,50 +30,48 @@ class SyncMfgSerialsUseCase @Inject constructor(
      * 3. APIに送信
      * 4. 結果に応じてステータスを更新
      */
-    suspend operator fun invoke(): Result<SyncResult> = withContext(Dispatchers.IO) {
+    suspend operator fun invoke(
+        onProgress: (current: Int, total: Int) -> Unit = { _, _ -> }
+    ): Result<SyncResult> = withContext(Dispatchers.IO) {
         try {
-            // 1. 同期対象のデータを取得
             val readyMappings = repository.getReadyToSync()
             if (readyMappings.isEmpty()) {
                 return@withContext Result.Success(SyncResult(0, 0, "同期対象のデータがありません"))
             }
 
-            // 2. データをAPIリクエスト用の形式に変換
             val syncRequests = mapper.toSyncRequest(readyMappings)
             var successCount = 0
             val failedIds = mutableListOf<Long>()
 
-            // 3. 各リクエストを順番に送信
-            for (request in syncRequests) {
+            // 進捗を通知しながらリクエストを実行
+            syncRequests.forEachIndexed { index, request ->
                 try {
+                    // 進捗を通知
+                    onProgress(index + 1, syncRequests.size)
+
                     val response = syncService.syncMfgSerials(request)
                     if (response.isSuccessful && response.body()?.success == true) {
-                        // 同期成功したIDを記録
                         val syncedIds = readyMappings
                             .filter { it.mfgId == request.mfgId }
                             .map { it.id }
 
-                        // 4. 同期済みとしてマーク
                         repository.updateStatus(syncedIds, MappingStatus.SYNCED)
                         successCount += syncedIds.size
                     } else {
-                        // 失敗したIDを記録
                         val failedMappings = readyMappings.filter { it.mfgId == request.mfgId }
                         failedIds.addAll(failedMappings.map { it.id })
                     }
                 } catch (e: Exception) {
-                    // エラーが発生したリクエストのIDを記録
                     val failedMappings = readyMappings.filter { it.mfgId == request.mfgId }
                     failedIds.addAll(failedMappings.map { it.id })
                 }
             }
 
-            // 失敗したレコードのステータスを更新
+            // エラー処理と結果の返却
             if (failedIds.isNotEmpty()) {
                 repository.updateStatus(failedIds, MappingStatus.FAILED)
             }
 
-            // 結果を返す
             val message = when {
                 successCount > 0 && failedIds.isNotEmpty() -> "一部のデータの同期に失敗しました"
                 successCount > 0 -> "${successCount}件のデータを同期しました"
