@@ -29,7 +29,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.*
 
-
 import com.example.bundlemaker2.util.Constants.EXTRA_CONFIRMED_SERIAL_IDS
 import com.example.bundlemaker2.util.Constants.EXTRA_MFG_ID
 import com.example.bundlemaker2.util.Constants.EXTRA_SERIAL_IDS
@@ -48,6 +47,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var mfgSerialRepository: MfgSerialRepository
+
+    // 同期中かどうかを示すフラグ
+    private var isSyncing = false
 
     private fun updateWorkerInfo(userName: String) {
         workerInfoText.text = getString(R.string.worker_info, userName)
@@ -229,10 +231,33 @@ class MainActivity : AppCompatActivity() {
             showPopupMenu(view)
         }
 
+        setupViews()
+    }
+
+    private fun setupViews() {
+        // リフレッシュボタンのクリックリスナーを設定
         findViewById<View>(R.id.refreshButton).setOnClickListener {
-            // TODO: Implement refresh button click action
-            showToast("Refreshing...")
+            if (!isSyncing) {
+                startSync()
+            }
         }
+    }
+
+    private fun startSync() {
+        // 同期中フラグをセット
+        isSyncing = true
+        // ボタンを無効化（必要に応じてローディング表示なども追加可能）
+        findViewById<View>(R.id.refreshButton).isEnabled = false
+        
+        // ここに同期処理を実装（後で実装）
+        Toast.makeText(this, "同期を開始します...", Toast.LENGTH_SHORT).show()
+        
+        // テスト用に3秒後に同期完了をシミュレート
+        findViewById<View>(R.id.refreshButton).postDelayed({
+            isSyncing = false
+            findViewById<View>(R.id.refreshButton).isEnabled = true
+            Toast.makeText(this, "同期が完了しました", Toast.LENGTH_SHORT).show()
+        }, 3000)
     }
 
     private fun showToast(message: String) {
