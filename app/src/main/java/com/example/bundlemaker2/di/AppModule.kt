@@ -1,9 +1,7 @@
 package com.example.bundlemaker2.di
 
 import android.content.Context
-import androidx.room.Room
 import com.example.bundlemaker2.data.database.AppDatabase
-import com.example.bundlemaker2.data.api.RetrofitClient
 import com.example.bundlemaker2.data.api.SyncService
 import com.example.bundlemaker2.data.dao.MfgSerialDao
 import com.example.bundlemaker2.data.mapper.MappingMapper
@@ -16,7 +14,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import retrofit2.Retrofit
 import javax.inject.Singleton
 
 @Module
@@ -52,39 +49,5 @@ object AppModule {
     @Singleton
     fun provideSyncDataMapper(): SyncDataMapper {
         return SyncDataMapper()
-    }
-}
-
-@Module
-@InstallIn(SingletonComponent::class)
-object DatabaseModule {
-
-    @Provides
-    @Singleton
-    fun provideDatabase(
-        @ApplicationContext context: Context
-    ): AppDatabase {
-        return AppDatabase.getInstance(context)
-    }
-
-    @Provides
-    fun provideMfgSerialDao(database: AppDatabase): MfgSerialDao {
-        return database.mfgSerialDao()
-    }
-}
-
-@Module
-@InstallIn(SingletonComponent::class)
-object NetworkModule {
-    @Provides
-    @Singleton
-    fun provideRetrofit(): Retrofit {
-        return RetrofitClient.retrofit
-    }
-
-    @Provides
-    @Singleton
-    fun provideSyncService(retrofit: Retrofit): SyncService {
-        return retrofit.create(SyncService::class.java)
     }
 }
